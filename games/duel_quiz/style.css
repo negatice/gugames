@@ -18,8 +18,6 @@
             height: 100vh;
             width: 100vw;
             overscroll-behavior: none;
-            margin: 0;
-            padding: 0;
         }
 
         h1 {
@@ -165,10 +163,10 @@
         }
         .mode-card:hover .mode-arrow { color: #fff; transform: translateX(6px); }
 
-        .start-footer {
+        /* .start-footer {
             margin-top: 22px; text-align: center;
             font-size: 0.75rem; color: #4a5568; letter-spacing: 0.5px;
-        }
+        } */
 
         @media (max-width: 480px) {
             .game-title { font-size: 3rem; }
@@ -197,8 +195,7 @@
             position: relative;
             overflow: hidden;
             width: 100%;
-            min-height: 0;
-            max-height: 50%;
+            height: 50%; /* Ensure equal split */
         }
 
         #player2Area {
@@ -206,12 +203,14 @@
             background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
             transform: rotate(180deg);
             border-bottom: 4px solid #fff;
+            height: 50%; /* Ensure equal split */
         }
 
         #player1Area {
             bottom: 0;
             background: linear-gradient(0deg, #3498db 0%, #2980b9 100%);
             border-top: 4px solid #fff;
+            height: 50%; /* Ensure equal split */
         }
 
         .player-content {
@@ -231,7 +230,7 @@
             align-items: center;
             min-width: 35px;
             gap: 4px;
-            margin-bottom: 20px;
+            margin-top: -20px;
         }
 
         .player-name {
@@ -240,6 +239,7 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
             opacity: 0.9;
             letter-spacing: 0.5px;
+            margin-bottom: 10px;
         }
 
         .player-score {
@@ -247,6 +247,7 @@
             font-weight: 700;
             background: rgba(0,0,0,0.25);
             padding: 2px 8px;
+            margin-bottom: 10px;
             border-radius: 12px;
             min-width: 28px;
             text-align: center;
@@ -503,7 +504,7 @@
             100% { transform: scale(1) rotate(0); opacity: 1; }
         }
         .countdown-subtitle {
-            margin-top: 20px;
+            margin-top: 10px;
             font-size: 1.5rem;
             color: #8899aa;
             font-weight: 500;

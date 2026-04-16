@@ -186,7 +186,6 @@
             overflow: hidden;
         }
         .player-area {
-            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -195,10 +194,10 @@
             position: relative;
             overflow: hidden;
             width: 100%;
-            min-height: 0;
         }
 
         #player2Area {
+            flex: 2;
             top: 0;
             background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
             transform: rotate(180deg);
@@ -206,6 +205,7 @@
         }
 
         #player1Area {
+            flex: 3;
             bottom: 0;
             background: linear-gradient(0deg, #3498db 0%, #2980b9 100%);
             border-top: 4px solid #fff;
@@ -228,6 +228,7 @@
             align-items: center;
             min-width: 35px;
             gap: 4px;
+            margin-top: -20px;
         }
 
         .player-name {
@@ -236,6 +237,7 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
             opacity: 0.9;
             letter-spacing: 0.5px;
+            margin-bottom: 10px;
         }
 
         .player-score {
@@ -243,7 +245,7 @@
             font-weight: 700;
             background: rgba(0,0,0,0.25);
             padding: 2px 8px;
-            border-radius: 12px;
+            margin-bottom: 10px;
             min-width: 28px;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
@@ -369,12 +371,12 @@
         /* Race Track Center */
         #raceTrack {
             position: absolute;
-            top: 50%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90%;
             max-width: 500px;
-            height: 55px;
+            height: 65px;
             min-height: 55px;
             background: rgba(178, 161, 227, 0.75);
             border-radius: 12px;

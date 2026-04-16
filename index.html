@@ -41,7 +41,8 @@
                     <span class="logo-text">GuGames</span>
                 </a>
                 <div class="nav-actions">
-                    <button class="nav-btn" onclick="openAboutModal()" title="About" aria-label="About">😎</button>
+                <button class="nav-btn" onclick="openAboutModal()" title="About" aria-label="About">😎</button>
+                <button class="nav-btn" id="bgmToggle" title="Toggle Music" aria-label="Toggle Music">🔊</button>
                 </div>
             </div>
         </nav>
@@ -61,8 +62,8 @@
                         <div class="hero-stat-label">Total Games</div>
                     </div>
                     <div class="hero-stat">
-                        <div class="hero-stat-value">5</div>
-                        <div class="hero-stat-label">Kategori</div>
+                        <div class="hero-stat-value">3+</div>
+                        <div class="hero-stat-label">Categories</div>
                     </div>
                     <div class="hero-stat">
                         <div class="hero-stat-value">100%</div>
@@ -84,7 +85,7 @@
         <!-- Multiplayer Section -->
         <section class="games-section fade-in-up" id="multiplayerSection">
             <div class="section-header">
-                <h2 class="section-title">👥 Multiplayer</h2>
+                <h2 class="section-title">Multiplayer</h2>
                 <span class="section-count" id="multiplayerCount">0 games</span>
             </div>
             <div class="games-grid" id="multiplayerGrid"></div>
@@ -93,7 +94,7 @@
         <!-- Single Player Section -->
         <section class="games-section fade-in-up" id="singleplayerSection">
             <div class="section-header">
-                <h2 class="section-title">🎯 Single Player</h2>
+                <h2 class="section-title">Single Player</h2>
                 <span class="section-count" id="singleplayerCount">0 games</span>
             </div>
             <div class="games-grid" id="singleplayerGrid"></div>
@@ -117,7 +118,7 @@
                 <h2 class="modal-game-name" id="modalName"></h2>
                 <p class="modal-game-desc" id="modalDesc"></p>
                 <button class="modal-play-btn" id="modalPlayBtn">
-                    ▶️ Main Sekarang
+                    Main Sekarang
                 </button>
             </div>
         </div>
@@ -152,7 +153,7 @@
                 </div>
 
                 <!-- Donation Button -->
-                <a href="https://trakteer.id/username-kamu" target="_blank" rel="noopener noreferrer" 
+                <a href="https://trakteer.id/negatice_id" target="_blank" rel="noopener noreferrer" 
                 style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 52px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); transition: var(--transition);"
                 onclick="closeAboutModal()">
                     ☕ Dukung Pengembangan
@@ -160,6 +161,20 @@
             </div>
         </div>
     </div>
+    <!-- 🎵 Auto-Play Music Prompt Banner -->
+    <div class="promo-banner" id="promoBanner">
+    <div class="promo-banner-inner">
+        <div class="promo-banner-icon">🎵</div>
+        <div class="promo-banner-content">
+        <h3 class="promo-title">Experience Enhanced! 🎶</h3>
+        <p class="promo-desc">Aktifkan background music untuk pengalaman bermain yang lebih seru.</p>
+        </div>
+        <button class="promo-btn" id="promoOkBtn">OK, Mulai</button>
+    </div>
+    </div>
+    <audio id="bgmAudio" loop preload="auto">
+        <source src="assets/audio/bgm.mp3" type="audio/mpeg">
+    </audio>
 </body>
 <script src="../assets/script.js"></script>
 </html>

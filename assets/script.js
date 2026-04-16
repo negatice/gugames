@@ -5,7 +5,7 @@
         const games = [
             { id: 1, name: "Time Freeze", category: "action", mode: "singleplayer", icon: "⏱️", gradient: "linear-gradient(135deg, #10b981, #059669)", rating: 4.5, plays: "12.5K", badge: "hot", desc: "Perfect Time is real?", url: "games/time_freeze/index.html" },
             { id: 2, name: "Tic Tac Toe", category: "strategy", mode: "multiplayer", icon: "❌⭕", gradient: "linear-gradient(135deg, #6366f1, #8b5cf6)", rating: 4.2, plays: "8.3K", badge: "popular", desc: "Permainan klasik dua pemain.", url: "games/tictactoe/index.html" },
-            // { id: 3, name: "Memory Card", category: "puzzle", mode: "singleplayer", icon: "🃏", gradient: "linear-gradient(135deg, #f59e0b, #d97706)", rating: 4.7, plays: "15.1K", badge: "new", desc: "Uji ingatanmu! Cocokkan pasangan kartu.", url: "games/memory/index.html" },
+            { id: 4, name: "Quiz Duel", category: "action", mode: "multiplayer", icon: "➗", gradient: "linear-gradient(135deg, #f59e0b, #d97706)", rating: 4.7, plays: "15.1K", badge: "new", desc: "Uji kemampuan menghitungmu!", url: "games/duel_quiz/index.html" },
             // { id: 4, name: "Flappy Bird", category: "arcade", mode: "singleplayer", icon: "🐦", gradient: "linear-gradient(135deg, #06b6d4, #0891b2)", rating: 4.3, plays: "22.0K", badge: "hot", desc: "Terbang melewati pipa-pipa rintangan.", url: "games/flappy/index.html" },
             // { id: 5, name: "2048 Puzzle", category: "puzzle", mode: "singleplayer", icon: "🔢", gradient: "linear-gradient(135deg, #ef4444, #dc2626)", rating: 4.8, plays: "18.7K", badge: "popular", desc: "Gabungkan angka untuk mencapai 2048!", url: "games/2048/index.html" },
             // { id: 6, name: "Color Match", category: "casual", mode: "multiplayer", icon: "🎨", gradient: "linear-gradient(135deg, #ec4899, #db2777)", rating: 4.1, plays: "5.4K", badge: "new", desc: "Cocokkan warna yang sama secepat mungkin!", url: "games/colormatch/index.html" },
@@ -168,7 +168,7 @@
             const game = games.find(g => g.id === id);
             if (!game) return;
 
-            showToast(`🎮 Membuka ${game.name}...`);
+            showToast(`Membuka ${game.name}...`);
 
             setTimeout(() => {
                 // Ganti dengan path relatif ke game kamu
@@ -266,3 +266,60 @@
         if ('serviceWorker' in navigator) {
             // navigator.serviceWorker.register('/sw.js');
         }
+
+        // 🎵 Background Music Controller
+(function() {
+  const bgm = document.getElementById('bgmAudio');
+  const toggleBtn = document.getElementById('bgmToggle');
+  if (!bgm || !toggleBtn) return;
+
+  // Atur volume awal (0.1 = 10%, 0.5 = 50%)
+  bgm.volume = 0.3;
+
+  // Coba autoplay saat halaman dimuat
+  bgm.play().catch(() => {
+    // Jika browser memblokir autoplay, set icon ke mute
+    toggleBtn.textContent = '🔇';
+    
+    // Aktifkan musik saat user pertama kali menyentuh/klik layar
+    const enableBGM = () => {
+      bgm.play().catch(() => {});
+    };
+    document.addEventListener('click', enableBGM, { once: true });
+    document.addEventListener('touchstart', enableBGM, { once: true });
+  });
+
+  // Tombol toggle mute/unmute
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Mencegah konflik dengan event lain
+    if (bgm.paused) {
+      bgm.play().catch(() => {});
+      toggleBtn.textContent = '🔊';
+    } else {
+      bgm.pause();
+      toggleBtn.textContent = '🔇';
+    }
+  });
+})();
+
+// 🎵 Auto-Play Banner Controller
+(function() {
+  const banner = document.getElementById('promoBanner');
+  const okBtn = document.getElementById('promoOkBtn');
+  const bgm = document.getElementById('bgmAudio');
+  
+  // Jika sudah pernah klik OK, jangan tampilkan lagi
+  if (localStorage.getItem('bgm_prompt_accepted') || !banner || !okBtn || !bgm) return;
+
+  // Tampilkan banner setelah halaman stabil (1.5 detik)
+  setTimeout(() => {
+    banner.classList.add('show');
+  }, 1500);
+
+  // Saat tombol OK ditekan
+  okBtn.addEventListener('click', () => {
+    bgm.play().catch(() => {}); // Play musik
+    localStorage.setItem('bgm_prompt_accepted', 'true'); // Simpan status
+    banner.classList.remove('show'); // Sembunyikan banner
+  });
+})();

@@ -195,7 +195,7 @@
             position: relative;
             overflow: hidden;
             width: 100%;
-            height: 50%; /* Ensure equal split */
+            min-height: 0;
         }
 
         #player2Area {
@@ -203,14 +203,12 @@
             background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
             transform: rotate(180deg);
             border-bottom: 4px solid #fff;
-            height: 50%; /* Ensure equal split */
         }
 
         #player1Area {
             bottom: 0;
             background: linear-gradient(0deg, #3498db 0%, #2980b9 100%);
             border-top: 4px solid #fff;
-            height: 50%; /* Ensure equal split */
         }
 
         .player-content {
@@ -230,7 +228,6 @@
             align-items: center;
             min-width: 35px;
             gap: 4px;
-            margin-top: -20px;
         }
 
         .player-name {
@@ -239,7 +236,6 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
             opacity: 0.9;
             letter-spacing: 0.5px;
-            margin-bottom: 10px;
         }
 
         .player-score {
@@ -247,7 +243,6 @@
             font-weight: 700;
             background: rgba(0,0,0,0.25);
             padding: 2px 8px;
-            margin-bottom: 10px;
             border-radius: 12px;
             min-width: 28px;
             text-align: center;

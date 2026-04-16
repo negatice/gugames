@@ -207,7 +207,8 @@
         #player1Area {
             flex: 11;
             bottom: 0;
-            padding-bottom: 20px;
+            padding-top: -20px;
+            padding-bottom: 10px;
             background: linear-gradient(0deg, #3498db 0%, #2980b9 100%);
             border-top: 4px solid #fff;
         }
@@ -218,7 +219,6 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 10px;
             flex-shrink: 1; /* ← Agar bisa mengecil jika perlu */
             min-height: 0;  /* ← FIX tambahan */
         }

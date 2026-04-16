@@ -1,0 +1,376 @@
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  :root{
+    --bg:#0a0a1a;--card:#12122a;--accent:#00f0ff;--accent2:#ff00aa;
+    --gold:#ffd700;--green:#00ff88;--red:#ff4466;--text:#e0e0ff;
+    --dim:#555580;
+  }
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--text);
+    display:flex;justify-content:center;align-items:center;
+    min-height:100dvh;
+  }
+
+  /* ── CONTAINER ── */
+  #app{
+    width:100%;max-width:420px;height:100dvh;
+    display:flex;flex-direction:column;
+    position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#0a0a1a 0%,#0f0f2e 50%,#0a0a1a 100%);
+  }
+
+  /* ── HEADER ── */
+  .header{
+    padding:16px 20px 8px;text-align:center;
+    position:relative;z-index:10;
+  }
+  .header h1{
+    font-size:1.3rem;letter-spacing:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .header .subtitle{font-size:.7rem;color:var(--dim);margin-top:2px;letter-spacing:1px}
+
+  /* ── SCREENS ── */
+  .screen{
+    display:none;flex-direction:column;
+    flex:1;padding:0 20px 20px;
+    animation:fadeIn .4s ease;
+  }
+  .screen.active{display:flex}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── MENU SCREEN ── */
+  #screenMenu{
+    justify-content:center;align-items:center;gap:20px;text-align:center;
+  }
+  .logo-icon{
+    width:100px;height:100px;margin:0 auto 10px;
+    border-radius:50%;
+    background:conic-gradient(var(--accent),var(--accent2),var(--accent));
+    display:flex;align-items:center;justify-content:center;
+    animation:spin 4s linear infinite;
+    box-shadow:0 0 40px rgba(0,240,255,.3),0 0 80px rgba(255,0,170,.15);
+  }
+  .logo-icon span{
+    font-size:2.5rem;
+    animation:spin 4s linear infinite reverse;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .menu-title{
+    font-size:2rem;font-weight:800;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .menu-desc{color:var(--dim);font-size:.85rem;max-width:280px;line-height:1.5}
+
+  .btn{
+    padding:14px 40px;border:none;border-radius:14px;
+    font-size:1rem;font-weight:700;cursor:pointer;
+    letter-spacing:1px;position:relative;overflow:hidden;
+    transition:transform .15s,box-shadow .15s;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Samakan ukuran tombol */
+    max-width: 300px; /* Batas maksimal lebar tombol */
+  }
+  .btn:active{transform:scale(.95)}
+  .btn-primary{
+    background:linear-gradient(135deg,var(--accent),#0088ff);
+    color:#000;box-shadow:0 4px 25px rgba(0,240,255,.4);
+  }
+  .btn-secondary{
+    background:transparent;color:var(--accent);
+    border:2px solid rgba(0,240,255,.3);
+  }
+
+  /* ── GAME SCREEN ── */
+  #screenGame{padding-top:10px}
+
+  .round-info{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 16px;border-radius:12px;
+    background:rgba(255,255,255,.04);margin-bottom:12px;
+  }
+  .round-info .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+  .round-info .value{font-size:1rem;font-weight:700;color:var(--accent)}
+
+  /* Target Display */
+  .target-section{
+    text-align:center;padding:16px 0 8px;
+  }
+  .target-label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+  .target-value{
+    font-size:2.8rem;font-weight:900;
+    background:linear-gradient(90deg,var(--gold),#ffaa00);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+    text-shadow:none;
+  }
+  .target-value .unit{font-size:1.2rem;opacity:.7}
+
+  /* Timer Display */
+  .timer-section{
+    flex:1;display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+    position:relative;
+  }
+  .timer-ring{
+    width:220px;height:220px;border-radius:50%;
+    position:relative;display:flex;align-items:center;justify-content:center;
+    margin-bottom:8px;
+  }
+  .timer-ring svg{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    transform:rotate(-90deg);
+  }
+  .timer-ring .track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:4}
+  .timer-ring .progress{
+    fill:none;stroke:var(--accent);stroke-width:4;
+    stroke-linecap:round;
+    transition:stroke-dashoffset .05s linear, stroke .3s;
+  }
+  .timer-ring .progress.danger{stroke:var(--red)}
+  .timer-ring .progress.perfect{stroke:var(--green)}
+
+  .timer-display{
+    font-size:3.2rem;font-weight:900;font-variant-numeric:tabular-nums;
+    letter-spacing:2px;z-index:2;
+    text-shadow:0 0 30px rgba(0,240,255,.3);
+  }
+  .timer-display .ms{font-size:1.8rem;opacity:.6}
+
+  .timer-status{
+    font-size:.75rem;letter-spacing:2px;text-transform:uppercase;
+    color:var(--dim);z-index:2;margin-top:4px;
+  }
+
+  /* ── FREEZE BUTTON ── */
+  .freeze-section{
+    padding:10px 0 6px;display:flex;justify-content:center;
+  }
+  .btn-freeze{
+    width:100%;max-width:300px;padding:18px;
+    border:none;border-radius:16px;cursor:pointer;
+    font-size:1.2rem;font-weight:800;letter-spacing:3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;position:relative;overflow:hidden;
+    box-shadow:0 6px 30px rgba(0,240,255,.35),0 6px 30px rgba(255,0,170,.2);
+    transition:transform .12s,box-shadow .12s;
+  }
+  .btn-freeze:active{transform:scale(.94)}
+  .btn-freeze::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+    transform:translateX(-100%);
+    animation:shimmer 2s infinite;
+  }
+  @keyframes shimmer{to{transform:translateX(100%)}}
+
+  .btn-freeze.frozen{
+    background:linear-gradient(135deg,#333,#555);
+    box-shadow:none;
+    animation:none;
+  }
+  .btn-freeze.frozen::after{display:none}
+
+  /* ── RESULT OVERLAY ── */
+  .result-overlay{
+    position:absolute;inset:0;
+    background:rgba(10,10,26,.95);
+    display:none;flex-direction:column;
+    justify-content:center;align-items:center;
+    padding:30px 20px;text-align:center;z-index:50;
+    animation:fadeIn .3s ease;
+  }
+  .result-overlay.active{display:flex}
+
+  .result-icon{font-size:4rem;margin-bottom:8px}
+  .result-title{font-size:1.4rem;font-weight:800;margin-bottom:4px}
+  .result-subtitle{font-size:.85rem;color:var(--dim);margin-bottom:20px}
+
+  .result-time{
+    font-size:2.5rem;font-weight:900;margin-bottom:4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .result-target{font-size:.9rem;color:var(--dim);margin-bottom:16px}
+  .result-diff{
+    font-size:1.1rem;font-weight:700;padding:8px 20px;
+    border-radius:10px;display:inline-block;margin-bottom:24px;
+  }
+  .result-diff.great{background:rgba(0,255,136,.15);color:var(--green)}
+  .result-diff.good{background:rgba(0,240,255,.15);color:var(--accent)}
+  .result-diff.ok{background:rgba(255,215,0,.15);color:var(--gold)}
+  .result-diff.bad{background:rgba(255,68,102,.15);color:var(--red)}
+
+  .result-score{
+    font-size:.8rem;color:var(--dim);margin-bottom:20px;
+  }
+  .result-score span{color:var(--gold);font-weight:700;font-size:1.1rem}
+
+  .result-buttons{display:flex;gap:10px;width:100%;max-width:300px}
+  .result-buttons .btn{flex:1;padding:14px 10px;font-size:.9rem}
+
+  /* ── SCOREBOARD ── */
+  .scoreboard{
+    width:100%;max-width:300px;margin-top:10px;
+  }
+  .score-row{
+    display:flex;justify-content:space-between;
+    padding:8px 12px;border-radius:8px;
+    background:rgba(255,255,255,.03);margin-bottom:4px;
+    font-size:.8rem;
+  }
+  .score-row .round{color:var(--dim)}
+  .score-row .time{font-variant-numeric:tabular-nums}
+  .score-row .score{color:var(--gold);font-weight:700}
+
+  /* ── FINAL SCREEN ── */
+  #screenFinal{
+    justify-content:center;align-items:center;
+    text-align:center;gap:12px;
+  }
+  .final-title{font-size:1.8rem;font-weight:800}
+  .final-total{
+    font-size:3rem;font-weight:900;
+    background:linear-gradient(90deg,var(--gold),#ffaa00);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .final-best{
+    font-size:.85rem;color:var(--dim);
+  }
+  .final-best span{color:var(--accent);font-weight:700}
+
+  .final-scores{
+    width:100%;max-width:300px;margin:10px 0;
+    max-height:35dvh;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .final-scores::-webkit-scrollbar{width:3px}
+  .final-scores::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+
+  /* ── PARTICLES ── */
+  .particle{
+    position:absolute;pointer-events:none;
+    border-radius:50%;z-index:40;
+    animation:particleFly .8s ease-out forwards;
+  }
+  @keyframes particleFly{
+    0%{opacity:1;transform:translate(0,0) scale(1)}
+    100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}
+  }
+
+  /* ── FREEZE EFFECT ── */
+  .freeze-effect{
+    position:absolute;inset:0;
+    background:radial-gradient(circle,rgba(0,240,255,.15),transparent 70%);
+    z-index:30;pointer-events:none;
+    animation:freezePulse .6s ease-out forwards;
+  }
+  @keyframes freezePulse{
+    0%{opacity:0;transform:scale(.5)}
+    50%{opacity:1;transform:scale(1.1)}
+    100%{opacity:0;transform:scale(1.5)}
+  }
+
+  /* ── PROGRESS BAR (round) ── */
+  .round-progress{
+    display:flex;gap:6px;justify-content:center;margin-bottom:8px;
+  }
+  .round-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:rgba(255,255,255,.1);transition:background .3s,box-shadow .3s;
+  }
+  .round-dot.done{background:var(--accent);box-shadow:0 0 8px rgba(0,240,255,.5)}
+  .round-dot.current{background:var(--accent2);box-shadow:0 0 8px rgba(255,0,170,.5)}
+
+  /* ── COMBO ── */
+  .combo-display{
+    text-align:center;padding:4px 0;
+    font-size:.8rem;color:var(--dim);
+    min-height:24px;
+  }
+  .combo-display.active{color:var(--gold);font-weight:700}
+
+  /* ── SETTINGS ROW ── */
+  .settings-row{
+    display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;
+  }
+  .settings-row label{
+    font-size:.7rem;color:var(--text); display:flex;align-items:center;gap:4px;
+  }
+  .settings-row select{
+    background:rgba(255, 255, 255, 0.08);
+    color: var(--accent);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 5px var(--accent);
+    }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media(max-height:600px){
+    .timer-ring{width:160px;height:160px}
+    .timer-display{font-size:2.4rem}
+    .timer-display .ms{font-size:1.3rem}
+    .target-value{font-size:2rem}
+    .btn-freeze{padding:14px}
+  }
+
+  .home-return-btn {
+  position: fixed;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 60px;
+  background: rgba(15, 15, 30, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  opacity: 0.7;
+  cursor: pointer;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: opacity 0.2s ease;
+}
+.home-return-btn:active {
+  opacity: 0.75;
+}
+.home-return-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(180deg, #7c3aed, #06b6d4);
+  transition: height 0s; /* Reset instan saat dilepas */
+}
+.home-return-btn.holding .home-return-progress {
+  height: 100%;
+  transition: height 1s linear; /* Durasi tahan 1 detik */
+}
+.home-return-icon {
+  position: relative;
+  z-index: 2;
+  font-size: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}

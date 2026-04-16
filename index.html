@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f0f1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Gugames - Play & Enjoy</title>
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+    <!-- Background Effects -->
+    <div class="bg-effects">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+    <div class="bg-grid"></div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">🎮</span>
+        <span id="toastText">Loading...</span>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container">
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <a href="#" class="logo" onclick="location.reload()">
+                    <div class="logo-icon">👾</div>
+                    <span class="logo-text">GuGames</span>
+                </a>
+                <div class="nav-actions">
+                    <button class="nav-btn" onclick="openAboutModal()" title="About" aria-label="About">😎</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero fade-in">
+            <div class="hero-card">
+                <div class="hero-badge">
+                    <span class="pulse"></span>
+                    <span>New Game</span>
+                </div>
+                <h1 class="hero-title">Mainkan Game Favoritmu!</h1>
+                <p class="hero-subtitle">Kumpulan game seru yang bisa langsung dimainkan di browser. Gratis & tanpa download!</p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value" id="totalGames">0</div>
+                        <div class="hero-stat-label">Total Games</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">5</div>
+                        <div class="hero-stat-label">Kategori</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">100%</div>
+                        <div class="hero-stat-label">Gratis</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                <!-- Search -->
+        <section class="search-section fade-in-up">
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="Cari game favorit..." autocomplete="off" aria-label="Search games">
+                <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search">✕</button>
+            </div>
+        </section>
+
+        <!-- Multiplayer Section -->
+        <section class="games-section fade-in-up" id="multiplayerSection">
+            <div class="section-header">
+                <h2 class="section-title">👥 Multiplayer</h2>
+                <span class="section-count" id="multiplayerCount">0 games</span>
+            </div>
+            <div class="games-grid" id="multiplayerGrid"></div>
+        </section>
+
+        <!-- Single Player Section -->
+        <section class="games-section fade-in-up" id="singleplayerSection">
+            <div class="section-header">
+                <h2 class="section-title">🎯 Single Player</h2>
+                <span class="section-count" id="singleplayerCount">0 games</span>
+            </div>
+            <div class="games-grid" id="singleplayerGrid"></div>
+        </section>
+
+        <!-- Empty State (Global) -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">😅</div>
+            <h3 class="empty-title">Game Tidak Ditemukan</h3>
+            <p class="empty-text">Coba kata kunci lain atau periksa kembali pencarianmu</p>
+        </div>
+    </div>
+
+
+    <!-- Game Preview Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-handle"></div>
+            <div class="modal-game-thumb" id="modalThumb"></div>
+            <div class="modal-body">
+                <h2 class="modal-game-name" id="modalName"></h2>
+                <p class="modal-game-desc" id="modalDesc"></p>
+                <button class="modal-play-btn" id="modalPlayBtn">
+                    ▶️ Main Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+        <!-- About Modal -->
+    <div class="modal-overlay" id="aboutModalOverlay" onclick="closeAboutModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-handle"></div>
+            <div class="modal-body" style="padding: 24px 20px 32px; text-align: center;">
+                
+                <!-- Avatar -->
+                <!-- <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--gradient-1); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: var(--shadow-glow);">
+                    👨‍💻
+                </div> -->
+                
+                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 4px;">About Gugames</h2>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">v1.0.0</p>
+
+                <!-- Info Box -->
+                <div style="background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px; text-align: left;">
+                    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">📖 Tentang Platform</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px;">
+                        Kumpulan game web ringan yang bisa langsung dimainkan di browser. 100% Gratis, tanpa iklan, dan tanpa download.
+                    </p>
+                    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">👤 Pembuat</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                        <strong>Nama:</strong> Guntur Darmawan<br>
+                        <strong>Instagram:</strong> Gunturdwn<br>
+                        <strong>Pesan:</strong> Terima kasih sudah memainkan game kami😊
+                    </p>
+                </div>
+
+                <!-- Donation Button -->
+                <a href="https://trakteer.id/username-kamu" target="_blank" rel="noopener noreferrer" 
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 52px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); transition: var(--transition);"
+                onclick="closeAboutModal()">
+                    ☕ Dukung Pengembangan
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="../assets/script.js"></script>
+</html>

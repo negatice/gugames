@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Tic Tac Toe - Memory Edition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="bg-particles" id="bgParticles"></div>
+<canvas id="particleCanvas"></canvas>
+
+<button class="sound-toggle" id="soundToggle">🔊</button>
+
+<div class="guide-overlay" id="guideOverlay">
+  <div class="guide-card">
+    <h3>🎮 Tic Tac Toe</h3>
+    <p>Versi Sliding — Papan hanya memuat <b>max 3</b> X dan <b>max 3</b> O. Mark tertua otomatis dihapus!</p>
+    <div class="feature">
+      <span>🔄</span> Tempatkan mark ke-4 → mark tertua hilang!<br>
+      <span>🧠</span> Gunakan strategi untuk mengatur posisi.
+    </div>
+    <button class="btn btn-primary" onclick="closeGuide()" style="width:100%">Mengerti! 🚀</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ==================== SCORE OVERLAY ==================== -->
+<div class="score-overlay" id="scoreOverlay">
+  <div class="score-card-overlay">
+    <div class="result-icon" id="resultIcon">🎉</div>
+    <h2 id="resultTitle">Kemenangan!</h2>
+    <p class="result-text" id="resultText">Permainan telah berakhir</p>
+    <div class="score-grid">
+      <div class="sg-card x">
+        <div class="sg-label">✕ Menang</div>
+        <div class="sg-value" id="sgX">0</div>
+      </div>
+      <div class="sg-card d">
+        <div class="sg-label">🤝 Seri</div>
+        <div class="sg-value" id="sgD">0</div>
+      </div>
+      <div class="sg-card o">
+        <div class="sg-label" id="sgOLabel">◯ Menang</div>
+        <div class="sg-value" id="sgO">0</div>
+      </div>
+    </div>
+    <div class="score-btns">
+      <button class="btn btn-primary" onclick="playAgain()">🔄 Main Lagi</button>
+      <button class="btn btn-secondary" onclick="goToMenu()">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MENU SCREEN ==================== -->
+<div class="screen menu-screen active" id="menuScreen">
+  <div class="menu-title">
+    <h1>TIC TAC TOE</h1>
+    <p>Sliding Edition</p>
+  </div>
+
+  <div class="menu-card">
+    <h3>Pilih Mode</h3>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="pvp" onclick="setMode('pvp')">
+        <span class="icon">👥</span>
+        2 Pemain
+      </button>
+      <button class="mode-btn" data-mode="ai" onclick="setMode('ai')">
+        <span class="icon">🤖</span>
+        vs AI
+      </button>
+    </div>
+    <div class="difficulty-bar hidden" id="difficultyBar">
+      <button class="diff-btn" data-diff="easy" onclick="setDifficulty('easy')">😊 Mudah</button>
+      <button class="diff-btn active" data-diff="medium" onclick="setDifficulty('medium')">🤔 Sedang</button>
+      <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard')">😈 Sulit</button>
+    </div>
+  </div>
+
+  <div class="menu-scores">
+    <div class="menu-score-card x">
+      <div class="label">✕ Menang</div>
+      <div class="value" id="menuScoreX">0</div>
+    </div>
+    <div class="menu-score-card d">
+      <div class="label">🤝 Seri</div>
+      <div class="value" id="menuScoreD">0</div>
+    </div>
+    <div class="menu-score-card o">
+      <div class="label" id="menuOLabel">◯ Menang</div>
+      <div class="value" id="menuScoreO">0</div>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">Mulai Bermain</button>
+</div>
+
+<!-- ==================== GAME SCREEN ==================== -->
+<div class="screen game-screen" id="gameScreen">
+  <div class="game-header">
+    <span class="title">Tic Tac Toe</span>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-text" id="statusText">Giliran ✕</div>
+  </div>
+
+  <div class="board-wrapper">
+    <div class="board" id="board">
+      <div class="cell" data-index="0" onclick="handleCellClick(0)"></div>
+      <div class="cell" data-index="1" onclick="handleCellClick(1)"></div>
+      <div class="cell" data-index="2" onclick="handleCellClick(2)"></div>
+      <div class="cell" data-index="3" onclick="handleCellClick(3)"></div>
+      <div class="cell" data-index="4" onclick="handleCellClick(4)"></div>
+      <div class="cell" data-index="5" onclick="handleCellClick(5)"></div>
+      <div class="cell" data-index="6" onclick="handleCellClick(6)"></div>
+      <div class="cell" data-index="7" onclick="handleCellClick(7)"></div>
+      <div class="cell" data-index="8" onclick="handleCellClick(8)"></div>
+    </div>
+    <svg class="win-line-overlay" id="winLineOverlay" viewBox="0 0 280 280" preserveAspectRatio="none" style="display:none;">
+      <line id="winLine" x1="0" y1="0" x2="0" y2="0"/>
+    </svg>
+  </div>
+
+  <div class="game-controls">
+    <button class="btn btn-primary" onclick="resetGame()">🔄 Reset</button>
+    <button class="btn btn-secondary" onclick="goToMenu()">🏠 Menu</button>
+  </div>
+</div>
+<!-- 🏠 HOME RETURN BUTTON (Tempel sebelum </body> di setiap game) -->
+<div class="home-return-btn" id="homeReturnBtn">
+  <div class="home-return-progress"></div>
+  <span class="home-return-icon">❌</span>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

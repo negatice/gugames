@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🚀 NOVA STRIKE — Alien Invasion</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Start Screen -->
+<div class="overlay" id="startScreen">
+  <div class="title-wrap"><h1>NOVA STRIKE</h1></div>
+  <p class="subtitle">Alien Invasion</p>
+  <div class="diff-row">
+    <button class="diff-btn easy selected" data-diff="easy">🟢 EASY</button>
+    <button class="diff-btn medium" data-diff="medium">🟠 MEDIUM</button>
+    <button class="diff-btn hard" data-diff="hard">🔴 HARD</button>
+  </div>
+  <button class="launch-btn" id="startBtn">⚔️ LAUNCH</button>
+  <div class="controls-info">
+    <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> Move &nbsp;|&nbsp; <kbd>Space</kbd> Shoot<br>
+    <kbd>P</kbd> Pause &nbsp;|&nbsp; Mobile: ◀ ▶ (Left) + 🔥 (Right)
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value score" id="scoreDisplay">0</span></div>
+  <div class="hud-item"><span class="hud-label">Wave</span><span class="hud-value wave" id="waveDisplay">1</span></div>
+  <div class="hud-item" id="healthBar"></div>
+</div>
+
+<!-- Boss Bar -->
+<div id="bossBarWrap">
+  <div class="boss-label">⚠️ FINAL BOSS — THE DESTROYER</div>
+  <div class="boss-bar-bg"><div class="boss-bar-fill" id="bossBarFill"></div></div>
+</div>
+
+<!-- Game Over -->
+<div class="overlay hidden" id="gameOverScreen">
+  <h2 id="goTitle">Mission Failed</h2>
+  <div class="final-score" id="finalScore">0</div>
+  <div class="final-stats" id="finalStats"></div>
+  <button class="launch-btn" id="restartBtn">⚔️ TRY AGAIN</button>
+</div>
+
+<!-- Notification -->
+<div class="notification" id="notification"></div>
+
+<!-- Power-Up Indicator -->
+<div id="powerUpIndicator">⚡ RAPID FIRE</div>
+
+<!-- Game Canvas -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- Mobile Controls -->
+<div id="mobileControls">
+  <div class="mobile-dpad">
+    <button class="dpad-btn" id="mbLeft">◀</button>
+    <button class="dpad-btn" id="mbRight">▶</button>
+  </div>
+  <div class="mobile-action">
+    <button class="action-btn" id="mbFire">🔥</button>
+  </div>
+</div>
+
+<!-- 🏠 HOME RETURN BUTTON (Tempel sebelum </body> di setiap game) -->
+<div class="home-return-btn" id="homeReturnBtn">
+  <div class="home-return-progress"></div>
+  <span class="home-return-icon">❌</span>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

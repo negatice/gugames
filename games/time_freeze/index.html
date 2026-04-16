@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Time Freeze Dual</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ MENU ═══ -->
+  <div id="screenMenu" class="screen active">
+    <div class="logo-icon"><span>⏱️</span></div>
+    <div class="menu-title">TIME FREEZE DUAL</div>
+    <p class="menu-desc">Hentikan timer sedekat mungkin dengan target waktu. Semakin tepat, semakin tinggi skor!</p>
+    <div class="settings-row">
+      <label>Ronde
+        <select id="selRounds">
+          <option value="1" selected>1</option>
+          <option value="2" selected>2</option>
+          <option value="3" selected>3</option>
+        </select>
+      </label>
+      <label>Target
+        <select id="selTarget">
+          <option value="easy">Mudah (5-7s)</option>
+          <option value="medium" selected>Normal (7-10s)</option>
+          <option value="hard">Sulit (10-15s)</option>
+        </select>
+      </label>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">▶ MULAI</button>
+    <button class="btn btn-secondary" onclick="showBest()">🏆 Skor Terbaik</button>
+  </div>
+
+  <!-- ═══ GAME ═══ -->
+  <div id="screenGame" class="screen">
+    <div class="header">
+      <h1>TIME FREEZE DUAL</h1>
+      <div class="subtitle" id="gameSubtitle">Ronde 1 / 5</div>
+    </div>
+
+    <div class="round-progress" id="roundProgress"></div>
+
+    <div class="round-info">
+      <div><div class="label">Target</div><div class="value" id="roundTarget">10.00s</div></div>
+      <div><div class="label">Skor</div><div class="value" id="roundScore">0</div></div>
+      <div><div class="label">Combo</div><div class="value" id="roundCombo">x1</div></div>
+    </div>
+
+    <div class="target-section">
+      <div class="target-label">⏰ Hentikan di waktu ini</div>
+      <div class="target-value" id="targetDisplay">10.00<span class="unit">s</span></div>
+    </div>
+
+    <div class="timer-section">
+      <div class="timer-ring" id="timerRing">
+        <svg viewBox="0 0 220 220">
+          <circle class="track" cx="110" cy="110" r="100"/>
+          <circle class="progress" id="timerProgress" cx="110" cy="110" r="100"
+            stroke-dasharray="628.32" stroke-dashoffset="628.32"/>
+        </svg>
+        <div class="timer-display" id="timerDisplay">0.00<span class="ms">00</span></div>
+      </div>
+      <div class="timer-status" id="timerStatus">BERSIAP...</div>
+    </div>
+
+    <div class="combo-display" id="comboDisplay"></div>
+
+    <div class="freeze-section">
+      <button class="btn-freeze" id="btnFreeze" onclick="freezeTime()">❄️ FREEZE</button>
+    </div>
+  </div>
+
+  <!-- ═══ RESULT OVERLAY ═══ -->
+  <div class="result-overlay" id="resultOverlay">
+    <div class="result-icon" id="resultIcon">🎯</div>
+    <div class="result-title" id="resultTitle">Sempurna!</div>
+    <div class="result-subtitle" id="resultSubtitle">Kamu luar biasa!</div>
+    <div class="result-time" id="resultTime">10.03</div>
+    <div class="result-target" id="resultTargetText">Target: 10.00s</div>
+    <div class="result-diff" id="resultDiff">±0.03s</div>
+    <div class="result-score">Skor: <span id="resultScore">100</span></div>
+    <div class="scoreboard" id="roundScoreboard"></div>
+    <div class="result-buttons">
+      <button class="btn btn-primary" id="btnNext" onclick="nextRound()">RONDE BERIKUTNYA</button>
+    </div>
+  </div>
+
+  <!-- ═══ FINAL SCREEN ═══ -->
+  <div id="screenFinal" class="screen">
+    <div class="final-title">🏆 HASIL AKHIR</div>
+    <div class="final-total" id="finalTotal">0</div>
+    <div style="font-size:.8rem;color:var(--dim)">Total Skor</div>
+    <div class="final-best" id="finalBest">Skor Terbaik: <span>-</span></div>
+    <div class="final-scores" id="finalScores"></div>
+    <button class="btn btn-primary" onclick="backToMenu()">🔄 MAIN LAGI</button>
+  </div>
+</div>
+<div class="home-return-btn" id="homeReturnBtn">
+  <div class="home-return-progress"></div>
+  <span class="home-return-icon">❌</span>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

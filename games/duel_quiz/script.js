@@ -196,6 +196,15 @@
             
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameContainer').style.display = 'flex';
+
+            // ✨ FIX: Force exact 50/50 split setelah DOM render
+            requestAnimationFrame(() => {
+                const container = document.getElementById('gameContainer');
+                const halfHeight = Math.floor(container.clientHeight / 2) + 'px';
+                document.getElementById('player1Area').style.height = halfHeight;
+                document.getElementById('player2Area').style.height = halfHeight;
+                updateRaceTrack();
+            });
             
             if(mode === 'time60') {
                 document.getElementById('globalTimer').style.display = 'block';

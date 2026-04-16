@@ -17,6 +17,9 @@
             height: 100dvh;
             height: 100vh;
             width: 100vw;
+            overscroll-behavior: none;
+            margin: 0;
+            padding: 0;
         }
 
         h1 {
@@ -177,24 +180,25 @@
         /* Game Container */
         #gameContainer {
             display: none;
-            height: 100dvh; height: 100vh;
+            height: 100dvh;
+            height: 100vh;
             width: 100vw;
             flex-direction: column;
             position: relative;
-            overflow: hidden; 
+            overflow: hidden;
         }
-
-        /* Player Areas */
         .player-area {
-            flex: 1; /* ← INI KUNCINYA: tepat 50% masing-masing, tanpa rounding error */
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 10px;
-            position: relative; /* Hapus absolute positioning */
+            position: relative;
             overflow: hidden;
             width: 100%;
+            min-height: 0;
+            max-height: 50%;
         }
 
         #player2Area {
@@ -211,12 +215,14 @@
         }
 
         .player-content {
+            width: 100%;
+            max-width: 600px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
-            max-width: 600px;
             padding: 0 10px;
+            flex-shrink: 1; /* ← Agar bisa mengecil jika perlu */
+            min-height: 0;  /* ← FIX tambahan */
         }
 
         .player-info-side {
@@ -250,7 +256,6 @@
 
         .question-box {
             flex: 2;
-            height: 60px;
             background: rgba(0,0,0,0.6);
             margin-left: 10px;
             margin-right: 10px;
@@ -262,6 +267,7 @@
             font-size: 20px;
             position: relative;
             overflow: hidden;
+            min-height: 0; /* ← FIX tambahan */
         }
 
         .question-timer-track {
@@ -325,6 +331,8 @@
             width: 100%;
             max-width: 400px;
             padding: 8px 20px 0;
+            flex-shrink: 1; /* ← Agar bisa mengecil */
+            min-height: 0;  /* ← FIX tambahan */
         }
 
         .answer-btn {

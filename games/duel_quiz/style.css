@@ -15,9 +15,10 @@
             color: white;
             overflow: hidden;
             height: 100dvh;
-            height: 100vh;
             width: 100vw;
             overscroll-behavior: none;
+            margin: 0;
+            padding: 0;
         }
 
         h1 {
@@ -163,10 +164,10 @@
         }
         .mode-card:hover .mode-arrow { color: #fff; transform: translateX(6px); }
 
-        /* .start-footer {
+        .start-footer {
             margin-top: 22px; text-align: center;
             font-size: 0.75rem; color: #4a5568; letter-spacing: 0.5px;
-        } */
+        }
 
         @media (max-width: 480px) {
             .game-title { font-size: 3rem; }
@@ -179,13 +180,18 @@
         #gameContainer {
             display: none;
             height: 100dvh;
-            height: 100vh;
             width: 100vw;
             flex-direction: column;
             position: relative;
             overflow: hidden;
         }
+
         .player-area {
+            flex: 1 1 0;
+        }
+
+        .player-area {
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -194,23 +200,23 @@
             position: relative;
             overflow: hidden;
             width: 100%;
+            min-height: 0;
+            border: none;
         }
 
         #player2Area {
-            flex: 9;
             top: 0;
             background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
             transform: rotate(180deg);
             border-bottom: 4px solid #fff;
+            box-shadow: inset 0 -2px 0 #fff;
         }
 
         #player1Area {
-            flex: 11;
             bottom: 0;
-            padding-top: -20px;
-            padding-bottom: 10px;
             background: linear-gradient(0deg, #3498db 0%, #2980b9 100%);
             border-top: 4px solid #fff;
+            box-shadow: inset 0 2px 0 #fff;
         }
 
         .player-content {
@@ -219,6 +225,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0 10px;
             flex-shrink: 1; /* ← Agar bisa mengecil jika perlu */
             min-height: 0;  /* ← FIX tambahan */
         }
@@ -229,7 +236,6 @@
             align-items: center;
             min-width: 35px;
             gap: 4px;
-            margin-top: -20px;
         }
 
         .player-name {
@@ -238,7 +244,6 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
             opacity: 0.9;
             letter-spacing: 0.5px;
-            margin-bottom: 10px;
         }
 
         .player-score {
@@ -246,7 +251,7 @@
             font-weight: 700;
             background: rgba(0,0,0,0.25);
             padding: 2px 8px;
-            margin-bottom: 10px;
+            border-radius: 12px;
             min-width: 28px;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
@@ -372,12 +377,12 @@
         /* Race Track Center */
         #raceTrack {
             position: absolute;
-            top: 45%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90%;
             max-width: 500px;
-            height: 65px;
+            height: 55px;
             min-height: 55px;
             background: rgba(178, 161, 227, 0.75);
             border-radius: 12px;

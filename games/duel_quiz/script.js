@@ -195,7 +195,7 @@
             document.getElementById('score2').textContent = '0';
             
             document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('gameContainer').style.display = 'flex';
             
             if(mode === 'time60') {
                 document.getElementById('globalTimer').style.display = 'block';

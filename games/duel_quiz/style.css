@@ -5,11 +5,16 @@
             touch-action: manipulation;
         }
 
+        html{
+            height: 100dvh;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a2e;
             color: white;
             overflow: hidden;
+            height: 100dvh;
             height: 100vh;
             width: 100vw;
         }
@@ -172,21 +177,24 @@
         /* Game Container */
         #gameContainer {
             display: none;
-            height: 100vh;
+            height: 100dvh; height: 100vh;
             width: 100vw;
+            flex-direction: column;
             position: relative;
+            overflow: hidden; 
         }
 
         /* Player Areas */
         .player-area {
-            position: absolute;
-            width: 100%;
-            height: 50%;
+            flex: 1; /* ← INI KUNCINYA: tepat 50% masing-masing, tanpa rounding error */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 10px;
+            position: relative; /* Hapus absolute positioning */
+            overflow: hidden;
+            width: 100%;
         }
 
         #player2Area {

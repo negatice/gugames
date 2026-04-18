@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PHOTO SLIDING PUZZLE</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -17,6 +17,8 @@
     color:var(--text);min-height:100vh;min-height:100dvh;
     display:flex;flex-direction:column;align-items:center;
     overflow-x:hidden;position:relative;
+    /* Mencegah scroll bounce di iOS */
+    overscroll-behavior:none;
   }
   body::before{
     content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
@@ -103,6 +105,8 @@
   .board-wrapper{
     position:relative;width:100%;max-width:400px;aspect-ratio:1;
     margin:0 auto;
+    /* FIX MOBILE: Mencegah scroll saat menyentuh area puzzle */
+    touch-action: none;
   }
   .board{
     position:relative;width:100%;height:100%;
@@ -115,13 +119,17 @@
     transition:left .18s ease-in-out,top .18s ease-in-out;
     overflow:hidden;border:1px solid rgba(255,255,255,0.1);
     background:#222;
+    /* FIX MOBILE: Optimasi touch & cegah highlight/zoom */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
   .tile img{
     width:100%;height:100%;object-fit:cover;display:block;
     pointer-events:none;user-select:none;
   }
   .tile.empty{background:transparent!important;border:none!important;cursor:default}
-  .tile.movable{box-shadow:0 0 8px rgba(167,139,250,0.3)}
+  .tile.movable{box-shadow:0 0 8px rgba(167,139,250,0.4)}
   .tile:active:not(.empty){transform:scale(.96)}
 
   /* GAME BUTTONS */
@@ -331,16 +339,16 @@
   'use strict';
 
   // ============ STATE ============
-  let state = 'MENU'; // MENU, PLAYING, COMPLETED
+  let state = 'MENU';
   let gridSize = 6;
   let totalTiles = 0;
-  let tiles = []; // array of {id, row, col, el}
+  let tiles = [];
   let emptyRow, emptyCol;
   let moves = 0;
   let timerInterval = null;
   let startTime = 0;
   let elapsed = 0;
-  let imageData = null; // {src, width, height}
+  let imageData = null;
   let audioCtx = null;
 
   // ============ DOM REFS ============
@@ -372,6 +380,7 @@
   // ============ AUDIO ============
   function getAudioCtx(){
     if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
 
@@ -525,7 +534,6 @@
     totalTiles = gridSize * gridSize;
     const tileSize = 100 / gridSize;
 
-    // Process image on canvas
     const canvas = hiddenCanvas;
     const ctx = canvas.getContext('2d');
     const img = new Image();
@@ -538,7 +546,6 @@
       canvas.height = size;
       ctx.drawImage(img, sx, sy, size, size, 0, 0, size, size);
 
-      // Create tiles
       const tilePixelSize = size / gridSize;
       for(let r = 0; r < gridSize; r++){
         for(let c = 0; c < gridSize; c++){
@@ -547,7 +554,6 @@
             emptyRow = r; emptyCol = c;
             continue;
           }
-          // Extract tile image
           const tileCanvas = document.createElement('canvas');
           tileCanvas.width = tilePixelSize;
           tileCanvas.height = tilePixelSize;
@@ -568,7 +574,24 @@
           el.dataset.id = id;
           el.dataset.row = r;
           el.dataset.col = c;
-          el.addEventListener('click', () => onTileClick(r, c));
+
+          // 🔧 FIX MOBILE: Baca koordinat REAL-TIME dari dataset, bukan closure
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            const row = parseInt(e.currentTarget.dataset.row);
+            const col = parseInt(e.currentTarget.dataset.col);
+            if (!isNaN(row) && !isNaN(col)) onTileClick(row, col);
+          });
+          
+          // Tambahan touch handler untuk respons lebih cepat di mobile
+          el.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const row = parseInt(e.currentTarget.dataset.row);
+            const col = parseInt(e.currentTarget.dataset.col);
+            if (!isNaN(row) && !isNaN(col)) onTileClick(row, col);
+          });
+
           board.appendChild(el);
           tiles.push({ id, row: r, col: c, el });
         }
@@ -592,7 +615,6 @@
 
   // ============ SHUFFLE ============
   function shufflePuzzle(){
-    // Shuffle by making random valid moves (guarantees solvability)
     const shuffleMoves = gridSize * gridSize * 40;
     const directions = [[-1,0],[1,0],[0,-1],[0,1]];
     let lastDir = -1;
@@ -600,12 +622,11 @@
     for(let i = 0; i < shuffleMoves; i++){
       const validDirs = [];
       directions.forEach((d, idx) => {
-        if(lastDir !== -1 && idx === (lastDir ^ 1)) return; // don't undo last move
+        if(lastDir !== -1 && idx === (lastDir ^ 1)) return;
         const nr = emptyRow + d[0], nc = emptyCol + d[1];
         if(nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) validDirs.push({r: nr, c: nc, dir: idx});
       });
       if(!validDirs.length) {
-        // fallback
         directions.forEach((d, idx) => {
           const nr = emptyRow + d[0], nc = emptyCol + d[1];
           if(nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) validDirs.push({r: nr, c: nc, dir: idx});
@@ -690,7 +711,6 @@
         if(t.row !== correctRow || t.col !== correctCol) return;
       }
     }
-    // WIN!
     state = 'COMPLETED';
     clearInterval(timerInterval);
     playSuccess();

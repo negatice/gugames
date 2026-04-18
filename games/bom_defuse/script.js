@@ -42,12 +42,12 @@ const Game = (() => {
   const STATES = { MENU:0, LEVEL_INTRO:1, SHOW_SEQ:2, PLAYER_INPUT:3, RESULT:4, GAME_OVER:5, WIN:6 };
   let state = STATES.MENU;
 
-  const LEVELS = [
-    { wires:3, memTime:3000 },
-    { wires:4, memTime:3000 },
-    { wires:5, memTime:2800 },
-    { wires:6, memTime:2500 },
-    { wires:7, memTime:2500 }
+      const LEVELS = [
+    { wires:2, memTime:3000, defuseTime:5 },   // Level 1: 5 detik
+    { wires:3, memTime:3000, defuseTime:7 },   // Level 2: 7 detik
+    { wires:4, memTime:3500, defuseTime:9 },   // Level 3: 9 detik
+    { wires:5, memTime:4000, defuseTime:12 },   // Level 4: 12 detik
+    { wires:6, memTime:4500, defuseTime:15 }   // Level 5: 15 detik
   ];
 
   const COLORS = [
@@ -78,7 +78,7 @@ const Game = (() => {
     $('hud-level').textContent = `LEVEL ${currentLevel + 1}`;
     $('hud-score').textContent = `SCORE: ${score}`;
     $('hud-combo').textContent = combo > 1 ? `🔥 x${combo}` : '';
-    $('progress-fill').style.width = `${(currentLevel / 5) * 100}%`;
+    $('progress-fill').style.width = `${(currentLevel / 4) * 100}%`;
   }
 
   function shuffleArray(arr) {
@@ -153,9 +153,9 @@ const Game = (() => {
   }
 
   function startDefuseTimer() {
-    let timeLeft = 10;
+    let timeLeft = LEVELS[currentLevel].defuseTime; // ⬅️ ambil dari config level
     const el = $('defuse-timer');
-    el.textContent = `0${timeLeft}`;
+    el.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft; // ⬅️ format otomatis
     el.className = '';
 
     defuseTimer = setInterval(() => {
@@ -257,7 +257,9 @@ const Game = (() => {
     start(isHardcore) {
       AudioEngine.init();
       hardcore = isHardcore; currentLevel = 0; score = 0; combo = 0; maxCombo = 0;
-      LEVELS.forEach((l, i) => l.memTime = hardcore ? 1000 : (i < 2 ? 3000 : i === 2 ? 2800 : 2500));
+      if (hardcore) {
+        LEVELS.forEach(l => l.memTime = 1000); // Hanya override kalau mode Hardcore aktif
+        }
       $('hud').style.display = 'flex'; $('progress-bar').style.display = 'block'; updateHUD();
       enterLevelIntro();
     },
@@ -289,4 +291,37 @@ const Game = (() => {
       clearInterval(defuseTimer); defuseTimer = null; showScreen('menu');
     }
   };
+})();
+
+(function() {
+  const btn = document.getElementById('homeReturnBtn');
+  if (!btn) return;
+
+  let holdTimer = null;
+
+  function startHold(e) {
+    if (e.cancelable) e.preventDefault();
+    btn.classList.add('holding');
+    holdTimer = setTimeout(() => {
+      // Feedback haptic (jika device mendukung)
+      if (navigator.vibrate) navigator.vibrate(30);
+      // Ganti path ini jika struktur folder kamu berbeda
+      window.location.href = '../../index.html';
+    }, 1000); // 1000ms = 1 detik
+  }
+
+  function cancelHold() {
+    btn.classList.remove('holding');
+    clearTimeout(holdTimer);
+  }
+
+  // Mouse events
+  btn.addEventListener('mousedown', startHold);
+  btn.addEventListener('mouseup', cancelHold);
+  btn.addEventListener('mouseleave', cancelHold);
+
+  // Touch events
+  btn.addEventListener('touchstart', startHold, { passive: false });
+  btn.addEventListener('touchend', cancelHold);
+  btn.addEventListener('touchcancel', cancelHold);
 })();

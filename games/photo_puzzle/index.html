@@ -17,7 +17,6 @@
     color:var(--text);min-height:100vh;min-height:100dvh;
     display:flex;flex-direction:column;align-items:center;
     overflow-x:hidden;position:relative;
-    /* Mencegah scroll bounce di iOS */
     overscroll-behavior:none;
   }
   body::before{
@@ -48,6 +47,20 @@
     justify-content:center;cursor:pointer;transition:all .3s;
     background:rgba(124,58,237,0.05);margin:20px 0;position:relative;overflow:hidden;
   }
+  .upload-area.compact {
+    aspect-ratio: unset;
+    height: 50px;
+    max-height: 50px;
+    margin: 10px 0;
+    padding: 0 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .upload-area.compact .icon { font-size: 1.2rem; margin-bottom: 0; }
+  .upload-area.compact .label { font-size: 0.8rem; }
+  .upload-area.compact .sublabel { display: none; }
   .upload-area:hover,.upload-area.dragover{border-color:var(--accent);background:rgba(124,58,237,0.12)}
   .upload-area .icon{font-size:3rem;margin-bottom:8px}
   .upload-area .label{font-size:1rem;color:var(--text2)}
@@ -105,7 +118,6 @@
   .board-wrapper{
     position:relative;width:100%;max-width:400px;aspect-ratio:1;
     margin:0 auto;
-    /* FIX MOBILE: Mencegah scroll saat menyentuh area puzzle */
     touch-action: none;
   }
   .board{
@@ -119,7 +131,6 @@
     transition:left .18s ease-in-out,top .18s ease-in-out;
     overflow:hidden;border:1px solid rgba(255,255,255,0.1);
     background:#222;
-    /* FIX MOBILE: Optimasi touch & cegah highlight/zoom */
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
@@ -239,7 +250,6 @@
   </div>
 
   <div class="upload-area" id="uploadArea">
-    <div class="icon">📷</div>
     <div class="label">Ketuk untuk unggah foto</div>
     <div class="sublabel">atau drag & drop di sini</div>
   </div>
@@ -256,7 +266,7 @@
     <button class="grid-btn active" data-size="6">6×6</button>
   </div>
 
-  <button class="btn btn-primary" id="startBtn" disabled>🎮 Mulai Bermain</button>
+  <button class="btn btn-primary" id="startBtn" disabled>Mulai Bermain</button>
 
   <div class="highscores" id="highscoresSection" style="display:none">
     <h3>🏆 Skor Terbaik</h3>
@@ -273,15 +283,15 @@
 
   <div class="hud">
     <div class="hud-item">
-      <span class="label">⏱ Waktu</span>
+      <span class="label">Waktu</span>
       <span class="value" id="timer">00:00</span>
     </div>
     <div class="hud-item">
-      <span class="label">👆 Langkah</span>
+      <span class="label">Langkah</span>
       <span class="value" id="moveCount">0</span>
     </div>
     <div class="hud-item">
-      <span class="label">📐 Grid</span>
+      <span class="label">Grid</span>
       <span class="value" id="gridLabel">6×6</span>
     </div>
   </div>
@@ -294,7 +304,7 @@
     <button class="btn btn-secondary" id="hintBtn">👁 Hint</button>
     <button class="btn btn-secondary" id="shuffleBtn">🔀 Shuffle</button>
     <button class="btn btn-danger" id="restartBtn">🔄 Restart</button>
-    <button class="btn btn-secondary" id="menuBtn">📋 Menu</button>
+    <button class="btn btn-secondary" id="menuBtn">Back to Menu</button>
   </div>
 </div>
 
@@ -323,7 +333,7 @@
     </div>
     <div class="win-buttons">
       <button class="btn btn-primary" id="playAgainBtn">🔁 Main Lagi</button>
-      <button class="btn btn-secondary" id="winMenuBtn">📋 Menu</button>
+      <button class="btn btn-secondary" id="winMenuBtn">Back to Menu</button>
     </div>
   </div>
 </div>
@@ -350,6 +360,7 @@
   let elapsed = 0;
   let imageData = null;
   let audioCtx = null;
+  let timerStarted = false; // 🔽 TAMBAHKAN: flag untuk timer pertama
 
   // ============ DOM REFS ============
   const $ = id => document.getElementById(id);
@@ -454,7 +465,8 @@
         previewImg.src = e.target.result;
         previewContainer.style.display = 'flex';
         startBtn.disabled = false;
-        uploadArea.querySelector('.label').textContent = '✅ Foto dipilih';
+        uploadArea.querySelector('.label').textContent = 'Upload Gambar Lain';
+        uploadArea.classList.add('compact');
       };
       img.src = e.target.result;
     };
@@ -520,12 +532,13 @@
     showScreen(gameScreen);
     moves = 0;
     elapsed = 0;
+    timerStarted = false; // 🔽 Reset flag timer
     updateHUD();
     gameGridLabel.textContent = `Grid: ${gridSize}×${gridSize}`;
     gridLabelEl.textContent = `${gridSize}×${gridSize}`;
+    clearInterval(timerInterval); // 🔽 Stop timer lama jika ada
     createPuzzle();
-    shufflePuzzle();
-    startTimer();
+    // 🔽 shufflePuzzle() & startTimer() dipindahkan ke createPuzzle() & swapTiles()
   }
 
   function createPuzzle(){
@@ -575,7 +588,6 @@
           el.dataset.row = r;
           el.dataset.col = c;
 
-          // 🔧 FIX MOBILE: Baca koordinat REAL-TIME dari dataset, bukan closure
           el.addEventListener('click', (e) => {
             e.preventDefault();
             const row = parseInt(e.currentTarget.dataset.row);
@@ -583,7 +595,6 @@
             if (!isNaN(row) && !isNaN(col)) onTileClick(row, col);
           });
           
-          // Tambahan touch handler untuk respons lebih cepat di mobile
           el.addEventListener('touchend', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -608,7 +619,9 @@
       emptyEl.dataset.col = emptyCol;
       board.appendChild(emptyEl);
       tiles.push({ id: totalTiles - 1, row: emptyRow, col: emptyCol, el: emptyEl });
-      highlightMovable();
+      
+      // 🔽 Shuffle DIPINDAH KE SINI (setelah tile siap)
+      shufflePuzzle();
     };
     img.src = imageData.src;
   }
@@ -670,6 +683,11 @@
     emptyTile.el.dataset.col = emptyCol;
 
     if(!silent){
+      // 🔽 START TIMER HANYA SAAT LANGKAH PERTAMA
+      if(!timerStarted) {
+        startTimer();
+        timerStarted = true;
+      }
       moves++;
       updateHUD();
       playClick();
@@ -784,7 +802,8 @@
     shufflePuzzle();
     moves = 0;
     elapsed = 0;
-    startTime = Date.now();
+    timerStarted = false; // 🔽 Reset flag
+    clearInterval(timerInterval); // 🔽 Stop timer
     updateHUD();
   });
 
@@ -794,10 +813,10 @@
     clearInterval(timerInterval);
     moves = 0;
     elapsed = 0;
+    timerStarted = false; // 🔽 Reset flag
     updateHUD();
     createPuzzle();
-    shufflePuzzle();
-    startTimer();
+    // shufflePuzzle() sudah dipanggil di dalam createPuzzle()
   });
 
   // ============ MENU BTN ============
@@ -819,10 +838,10 @@
     state = 'PLAYING';
     moves = 0;
     elapsed = 0;
+    timerStarted = false; // 🔽 Reset flag
     updateHUD();
     createPuzzle();
-    shufflePuzzle();
-    startTimer();
+    // shufflePuzzle() sudah dipanggil di dalam createPuzzle()
   });
 
   // ============ INIT ============

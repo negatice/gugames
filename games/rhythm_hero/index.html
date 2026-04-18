@@ -9,50 +9,23 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div id="gameContainer">
   <canvas id="gameCanvas"></canvas>
-
   <div id="hud">
     <div id="topRow">
-      <div id="scoreBox">
-        <div class="label">SKOR</div>
-        <div class="value" id="scoreVal">0</div>
-      </div>
-      <div id="comboBox">
-        <div class="value" id="comboVal">0</div>
-        <div class="label">COMBO</div>
-      </div>
+      <div id="scoreBox"><div class="label">SKOR</div><div class="value" id="scoreVal">0</div></div>
+      <div id="comboBox"><div class="value" id="comboVal">0</div><div class="label">COMBO</div></div>
     </div>
-    <div id="healthWrap">
-      <div id="healthFill"></div>
-      <div id="healthLabel">ENERGY</div>
-    </div>
+    <div id="healthWrap"><div id="healthFill"></div><div id="healthLabel">ENERGY</div></div>
   </div>
-
   <div id="feedback"></div>
   <div id="progressWrap"><div id="progressFill"></div></div>
-
   <div id="touchButtons">
-    <div class="touch-btn" data-lane="0" style="left:2px;">
-      <div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">1</span></div>
-      <div class="btn-label">TAP</div>
-    </div>
-    <div class="touch-btn" data-lane="1" style="left:calc(2px + (100% - 24px)/4 + 6px);">
-      <div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">2</span></div>
-      <div class="btn-label">TAP</div>
-    </div>
-    <div class="touch-btn" data-lane="2" style="left:calc(2px + 2*((100% - 24px)/4 + 6px));">
-      <div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">3</span></div>
-      <div class="btn-label">TAP</div>
-    </div>
-    <div class="touch-btn" data-lane="3" style="left:calc(2px + 3*((100% - 24px)/4 + 6px));">
-      <div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">4</span></div>
-      <div class="btn-label">TAP</div>
-    </div>
+    <div class="touch-btn" data-lane="0" style="left:2px;"><div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">1</span></div><div class="btn-label">TAP</div></div>
+    <div class="touch-btn" data-lane="1" style="left:calc(2px + (100% - 24px)/4 + 6px);"><div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">2</span></div><div class="btn-label">TAP</div></div>
+    <div class="touch-btn" data-lane="2" style="left:calc(2px + 2*((100% - 24px)/4 + 6px));"><div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">3</span></div><div class="btn-label">TAP</div></div>
+    <div class="touch-btn" data-lane="3" style="left:calc(2px + 3*((100% - 24px)/4 + 6px));"><div class="btn-ring"><span style="font-size:20px;font-weight:900;color:rgba(255,255,255,0.5)">4</span></div><div class="btn-label">TAP</div></div>
   </div>
-
-  <!-- Start / Menu -->
   <div id="startScreen" class="screen">
     <div class="title">🎸 RHYTHM HERO</div>
     <div class="subtitle">Ketuk not sesuai irama!</div>
@@ -60,30 +33,21 @@
     <button class="btn btn-level" onclick="showLevelSelect()">🎮 MODE LEVEL</button>
     <button class="btn btn-free" onclick="startFreeMode()">🔥 MODE BEBAS</button>
   </div>
-
-  <!-- Level Select (hidden by default) -->
   <div id="levelScreen" class="screen" style="display:none;background:radial-gradient(ellipse at center,#1a1a3a 0%,#0a0a1a 70%);">
     <div class="title" style="font-size:24px;">Pilih Level</div>
     <div class="subtitle">Selesaikan lagu untuk menang</div>
     <button class="btn btn-song" onclick="startLevelGame(0)">🌿 Neon Pulse <span class="sub">BPM 105 • Mudah</span></button>
     <button class="btn btn-song" onclick="startLevelGame(1)">⚡ Digital Storm <span class="sub">BPM 135 • Sedang</span></button>
     <button class="btn btn-song" onclick="startLevelGame(2)">🌙 Midnight Flow <span class="sub">BPM 150 • Sulit</span></button>
-    <button class="btn" style="background:#333;margin-top:15px;" onclick="showMainMenu()">⬅ Kembali</button>
+    <button class="btn btn-back" style="margin-top:15px;" onclick="showMainMenu()">⬅ Kembali</button>
   </div>
-
-  <!-- Result -->
   <div id="resultScreen" class="screen">
     <div class="result-title" id="resultTitle">SELESAI!</div>
     <div class="grade" id="gradeEl">S</div>
     <div class="stat-row"><span>Skor</span><span id="rScore">0</span></div>
     <div class="stat-row"><span>Max Combo</span><span id="rCombo">0</span></div>
     <div class="stat-row"><span>Akurasi</span><span id="rAcc">0%</span></div>
-    <div class="stat-row" style="margin-top:6px;color:#666;font-size:11px;">
-      <span style="color:#ffcc00">PERFECT</span> <span id="rP">0</span>
-      &nbsp;|&nbsp;<span style="color:#00ff88">GREAT</span> <span id="rG">0</span>
-      &nbsp;|&nbsp;<span style="color:#00ccff">GOOD</span> <span id="rGo">0</span>
-      &nbsp;|&nbsp;<span style="color:#ff3250">MISS</span> <span id="rM">0</span>
-    </div>
+    <div class="stat-row" style="margin-top:6px;color:#666;font-size:11px;"><span style="color:#ffcc00">PERFECT</span> <span id="rP">0</span> &nbsp;|&nbsp;<span style="color:#00ff88">GREAT</span> <span id="rG">0</span> &nbsp;|&nbsp;<span style="color:#00ccff">GOOD</span> <span id="rGo">0</span> &nbsp;|&nbsp;<span style="color:#ff3250">MISS</span> <span id="rM">0</span></div>
     <button class="btn btn-level" style="margin-top:18px;" onclick="showMainMenu()">KE MENU UTAMA</button>
   </div>
 </div>
@@ -91,6 +55,6 @@
         <div class="home-return-progress"></div>
         <span class="home-return-icon">❌</span>
     </div>
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

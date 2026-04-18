@@ -1,6 +1,4 @@
-/* ============================================================
-   AUDIO & HAPTIC
-   ============================================================ */
+/* ======================== AUDIO ======================== */
 const Audio = (() => {
   let ctx, master;
   const init = () => {
@@ -16,10 +14,6 @@ const Audio = (() => {
     osc.type = lane<2?'sine':'triangle';
     g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
     osc.connect(g).connect(master); osc.start(t); osc.stop(t+0.12);
-    const o2=ctx.createOscillator(), g2=ctx.createGain();
-    o2.frequency.value=2000;o2.type='square';g2.gain.setValueAtTime(0.04,t);
-    g2.gain.exponentialRampToValueAtTime(0.001,t+0.03);
-    o2.connect(g2).connect(master);o2.start(t);o2.stop(t+0.03);
   };
   const playMiss = () => {
     if (!ctx) return; const t=ctx.currentTime;
@@ -32,22 +26,7 @@ const Audio = (() => {
   return {init,resume,playHit,playMiss,haptic};
 })();
 
-/* ============================================================
-   HEALTH SYSTEM
-   ============================================================ */
-let health = 60;
-const updateHealth = (type) => {
-  const delta = type==='perfect'?6:type==='great'?3:type==='good'?1:-10;
-  health = Math.min(100, Math.max(0, health + delta));
-  document.getElementById('healthFill').style.width = health + '%';
-  document.getElementById('healthFill').style.backgroundPosition = (100-health) + '% 0';
-  document.getElementById('healthLabel').textContent = Math.round(health) + '%';
-  if (health <= 0) endGame(false);
-};
-
-/* ============================================================
-   SONG DATA (LEVELS)
-   ============================================================ */
+/* ======================== SONG DATA ======================== */
 const Songs = (() => {
   const build = (bpm, patterns, startBeat) => {
     const beatDur = 60 / bpm;
@@ -94,14 +73,13 @@ const Songs = (() => {
   return [s1,s2,s3];
 })();
 
-/* ============================================================
-   PARTICLE & GAME STATE
-   ============================================================ */
+/* ======================== PARTICLE ======================== */
 class Particle {
   constructor(x,y,c){this.x=x;this.y=y;this.c=c;this.vx=(Math.random()-0.5)*10;this.vy=(Math.random()-0.5)*10-4;this.life=1;this.decay=0.025+Math.random()*0.025;this.sz=3+Math.random()*5;}
   update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.12;this.life-=this.decay;}
 }
 
+/* ======================== GAME STATE ======================== */
 const canvas=document.getElementById('gameCanvas');
 const cx=canvas.getContext('2d');
 let W,H,dpr,laneW,totalW,startX,hitY,noteR,lanes=[];
@@ -109,10 +87,10 @@ const COLORS=['#ff3250','#32ff50','#3296ff','#ffc832'];
 const GLOWS=['rgba(255,50,80,','rgba(50,255,80,','rgba(50,150,255,','rgba(255,200,50,'];
 const THRESH={perfect:22,great:48,good:80};
 
-let mode='menu', currentLevel=0;
+let mode='menu', currentLevel=0, isPlaying=false;
 let notes=[], particles=[], score=0, combo=0, maxCombo=0;
 let stats={perfect:0,great:0,good:0,miss:0};
-let startTime=0, duration=0, noteSpeed=420;
+let health=60, startTime=0, duration=0, noteSpeed=420;
 let laneFlash=[0,0,0,0], fbText='', fbTimer=0, fbColor='#fff';
 let lastTs=0, running=false;
 let freeNextSpawn=0, freeBpm=110, freeBeat=0;
@@ -130,41 +108,25 @@ window.addEventListener('resize',resize); resize();
 
 function noteY(dt,elapsed){ return hitY-(dt-elapsed)*noteSpeed; }
 
-/* ============================================================
-   MENU FLOW
-   ============================================================ */
-const showMainMenu=()=>{
+/* ======================== MENU FLOW ======================== */
+window.showMainMenu=()=>{
   document.getElementById('startScreen').style.display='flex';
   document.getElementById('levelScreen').style.display='none';
   document.getElementById('resultScreen').style.display='none';
+  mode='menu'; isPlaying=false;
 };
-const showLevelSelect=()=>{
+window.showLevelSelect=()=>{
   document.getElementById('startScreen').style.display='none';
   document.getElementById('levelScreen').style.display='flex';
 };
 
-const startLevelGame=(idx)=>{
-  Audio.init(); Audio.resume();
-  mode='level'; currentLevel=idx;
-  const song=Songs[idx];
-  noteSpeed=idx===0?350:idx===1?420:500;
-  notes=song.notes.map(n=>({...n,displayTime:n.time+(hitY+100)/noteSpeed,hit:false,missed:false}));
-  duration=song.duration;
-  resetState();
-};
-
-const startFreeMode=()=>{
-  Audio.init(); Audio.resume();
-  mode='free'; notes=[]; duration=Infinity;
-  noteSpeed=420; freeNextSpawn=0; freeBpm=110; freeBeat=0;
-  resetState();
-};
-
 const resetState=()=>{
   score=0; combo=0; maxCombo=0; stats={perfect:0,great:0,good:0,miss:0};
-  particles=[]; laneFlash=[0,0,0,0]; fbText=''; fbTimer=0;
-  health=60; updateHealth('reset');
-  state='playing'; startTime=performance.now(); lastTs=startTime; running=true;
+  particles=[]; laneFlash=[0,0,0,0]; fbText=''; fbTimer=0; health=60;
+  document.getElementById('healthFill').style.width='60%';
+  document.getElementById('healthFill').style.backgroundPosition='40% 0';
+  document.getElementById('healthLabel').textContent='60%';
+  isPlaying=true; startTime=performance.now(); lastTs=startTime; running=true;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('levelScreen').style.display='none';
   document.getElementById('resultScreen').style.display='none';
@@ -176,9 +138,25 @@ const resetState=()=>{
   requestAnimationFrame(loop);
 };
 
-/* ============================================================
-   ENDLESS GENERATOR (FREE MODE)
-   ============================================================ */
+window.startLevelGame=(idx)=>{
+  Audio.init(); Audio.resume();
+  mode='level'; currentLevel=idx;
+  const song=Songs[idx];
+  noteSpeed=idx===0?350:idx===1?420:500;
+  notes=song.notes.map(n=>({...n,displayTime:n.time+(hitY+100)/noteSpeed,hit:false,missed:false}));
+  duration=song.duration;
+  freeNextSpawn=0; freeBpm=110; freeBeat=0;
+  resetState();
+};
+
+window.startFreeMode=()=>{
+  Audio.init(); Audio.resume();
+  mode='free'; notes=[]; duration=Infinity;
+  noteSpeed=420; freeNextSpawn=0; freeBpm=110; freeBeat=0;
+  resetState();
+};
+
+/* ======================== ENDLESS GENERATOR ======================== */
 const spawnFreeNotes=(elapsed)=>{
   const spawnAhead=2.5;
   while(freeNextSpawn < elapsed + spawnAhead){
@@ -193,9 +171,7 @@ const spawnFreeNotes=(elapsed)=>{
   }
 };
 
-/* ============================================================
-   GAME LOOP
-   ============================================================ */
+/* ======================== GAME LOOP ======================== */
 function loop(ts){
   if(!running) return;
   const dt=Math.min((ts-lastTs)/1000,0.05); lastTs=ts;
@@ -209,18 +185,18 @@ function update(elapsed,dt){
   particles=particles.filter(p=>{p.update();return p.life>0;});
   for(let i=0;i<4;i++) if(laneFlash[i]>0) laneFlash[i]=Math.max(0,laneFlash[i]-dt*5);
   if(fbTimer>0){fbTimer-=dt;if(fbTimer<=0)fbText='';}
-  
-  // Cleanup old notes
-  notes=notes.filter(n=>{
-    if(n.hit||n.missed) return false;
-    return noteY(n.displayTime,elapsed) < H+80;
-  });
 
-  for(const n of notes){
-    if(!n.hit&&!n.missed){
-      const y=noteY(n.displayTime,elapsed);
-      if(y>hitY+80){n.missed=true; onMiss();}
+  // Check misses safely (don't mutate while iterating)
+  const toMiss=[];
+  for(let i=0;i<notes.length;i++){
+    const n=notes[i];
+    if(!n.hit&&!n.missed && noteY(n.displayTime,elapsed)>hitY+80){
+      toMiss.push(i);
     }
+  }
+  for(let i=toMiss.length-1;i>=0;i--){
+    notes.splice(toMiss[i],1);
+    onMiss();
   }
 
   const prog=mode==='free'?0:Math.min(elapsed/duration,1);
@@ -228,36 +204,60 @@ function update(elapsed,dt){
   if(mode==='level' && elapsed>duration+1) endGame(true);
 }
 
-function onHit(lane){
-  if(mode!=='playing') return; // state alias
+/* ======================== HIT / MISS ======================== */
+window.onHit=(lane)=>{
+  if(!isPlaying) return; // FIX: pakai isPlaying, bukan mode!
   laneFlash[lane]=1;
   const elapsed=(performance.now()-startTime)/1000;
-  let best=null,bd=Infinity;
+  let best=null, bd=Infinity;
+
+  // Cari not terdekat di lane yang sama
   for(const n of notes){
     if(n.lane!==lane||n.hit||n.missed) continue;
     const d=Math.abs(noteY(n.displayTime,elapsed)-hitY);
     if(d<bd){bd=d;best=n;}
   }
   if(!best) return;
-  let q,pts,c;
+
+  let q, pts, c;
   if(bd<THRESH.perfect){q='perfect';pts=300;c='#ffcc00';stats.perfect++;}
   else if(bd<THRESH.great){q='great';pts=200;c='#00ff88';stats.great++;}
   else if(bd<THRESH.good){q='good';pts=100;c='#00ccff';stats.good++;}
-  else return;
+  else return; // terlalu jauh, abaikan tap
+
   best.hit=true; combo++; if(combo>maxCombo)maxCombo=combo;
   score+=Math.round(pts*(1+Math.floor(combo/10)*0.5));
   fbText=q.toUpperCase(); fbTimer=0.6; fbColor=c;
   for(let i=0;i<12;i++) particles.push(new Particle(lanes[lane].x,hitY,COLORS[lane]));
   Audio.playHit(lane,q); Audio.haptic(q==='perfect'?20:10);
   updateHealth(q); updateUI();
-}
+};
 
-function onMiss(){
+window.onMiss=()=>{
   combo=0; stats.miss++;
   fbText='MISS'; fbTimer=0.5; fbColor='#ff3250';
   Audio.playMiss(); Audio.haptic(30);
   updateHealth('miss'); updateUI();
-}
+};
+
+const updateHealth=(type)=>{
+  let delta=0;
+  if(type==='perfect') delta=6;
+  else if(type==='great') delta=3;
+  else if(type==='good') delta=1;
+  else if(type==='miss') delta=-10;
+  // 'reset' delta=0
+
+  health=Math.min(100, Math.max(0, health+delta));
+  document.getElementById('healthFill').style.width=health+'%';
+  document.getElementById('healthFill').style.backgroundPosition=(100-health)+'% 0';
+  document.getElementById('healthLabel').textContent=Math.round(health)+'%';
+
+  if(health<=0){
+    isPlaying=false; running=false;
+    setTimeout(()=>endGame(false),300);
+  }
+};
 
 function updateUI(){
   document.getElementById('scoreVal').textContent=score.toLocaleString();
@@ -268,6 +268,7 @@ function updateUI(){
   if(fbText){fb.textContent=fbText;fb.style.color=fbColor;fb.style.opacity='1';fb.style.transform='translate(-50%,-50%) scale(1.2)';setTimeout(()=>{fb.style.transform='translate(-50%,-50%) scale(1)';fb.style.opacity='0.8';},60);}
 }
 
+/* ======================== DRAW ======================== */
 function draw(elapsed){
   cx.clearRect(0,0,W,H); cx.fillStyle='#0a0a1a'; cx.fillRect(0,0,W,H);
   for(let i=0;i<4;i++){
@@ -307,7 +308,7 @@ function draw(elapsed){
 }
 
 function endGame(clear){
-  running=false;
+  running=false; isPlaying=false;
   const total=stats.perfect+stats.great+stats.good+stats.miss;
   const hits=stats.perfect+stats.great+stats.good;
   const acc=total>0?(hits/total*100):0;
@@ -316,8 +317,8 @@ function endGame(clear){
   else if(acc>=70){grade='B';cls='g-B';}else if(acc>=50){grade='C';cls='g-C';}
   else{grade='D';cls='g-D';}
 
-  document.getElementById('resultTitle').textContent = clear ? 'LEVEL SELESAI!' : 'GAME OVER';
-  document.getElementById('resultTitle').className = clear ? 'result-title win' : 'result-title lose';
+  document.getElementById('resultTitle').textContent=clear?'LEVEL SELESAI!':'GAME OVER';
+  document.getElementById('resultTitle').className=clear?'result-title win':'result-title lose';
   const ge=document.getElementById('gradeEl'); ge.textContent=grade; ge.className='grade '+cls;
   document.getElementById('rScore').textContent=score.toLocaleString();
   document.getElementById('rCombo').textContent=maxCombo;
@@ -326,18 +327,15 @@ function endGame(clear){
   document.getElementById('rG').textContent=stats.great;
   document.getElementById('rGo').textContent=stats.good;
   document.getElementById('rM').textContent=stats.miss;
-  
   document.getElementById('hud').style.display='none';
   document.getElementById('touchButtons').style.display='none';
   document.getElementById('resultScreen').style.display='flex';
 }
 
-/* ============================================================
-   TOUCH INPUT
-   ============================================================ */
+/* ======================== TOUCH INPUT ======================== */
 document.querySelectorAll('.touch-btn').forEach(btn=>{
   const lane=parseInt(btn.dataset.lane);
-  const act=e=>{e.preventDefault();btn.classList.add('active');onHit(lane);};
+  const act=e=>{e.preventDefault();btn.classList.add('active');window.onHit(lane);};
   const deact=e=>{e.preventDefault();btn.classList.remove('active');};
   btn.addEventListener('touchstart',act,{passive:false});
   btn.addEventListener('touchend',deact,{passive:false});

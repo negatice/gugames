@@ -1,0 +1,72 @@
+
+        * { margin:0; padding:0; box-sizing:border-box; touch-action:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+        body { background:#1a1208; overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; position:fixed; width:100%; height:100%; }
+        #gameCanvas { display:block; width:100%; height:100%; }
+        .overlay { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; pointer-events:all; z-index:10; }
+        .overlay.hidden { display:none; }
+        .bg { position:absolute; top:0; left:0; width:100%; height:100%; background:radial-gradient(circle at 50% 40%,#2a1f0e 0%,#1a1208 70%); }
+        .content { position:relative; z-index:1; text-align:center; padding:20px; max-width:90vw; }
+        .title { font-size:28px; font-weight:900; color:#f5d5a0; letter-spacing:2px; text-shadow:0 0 20px rgba(255,170,50,0.5); margin-bottom:4px; }
+        .subtitle { color:rgba(245,213,160,0.5); font-size:11px; letter-spacing:3px; text-transform:uppercase; margin-bottom:20px; }
+        .preview-box { display:flex; justify-content:center; gap:25px; margin-bottom:20px; }
+        .tank-card { display:flex; flex-direction:column; align-items:center; gap:5px; }
+        .tank-card canvas { background:rgba(255,255,255,0.06); border-radius:8px; }
+        .tank-label { font-size:12px; font-weight:bold; letter-spacing:1px; }
+        .p1-c{color:#ff7b54;} .p2-c{color:#4ecdc4;}
+        .btn { background:linear-gradient(135deg,#c8500a,#f5a623); color:#fff; border:none; padding:13px 38px; font-size:14px; font-weight:bold; border-radius:35px; cursor:pointer; box-shadow:0 4px 15px rgba(200,80,10,0.5); letter-spacing:1px; }
+        .btn:active{transform:scale(0.95);}
+        .btn-red { background:linear-gradient(135deg,#c0392b,#e74c3c); box-shadow:0 4px 15px rgba(192,57,43,0.5); }
+        .info { margin-top:16px; color:rgba(245,213,160,0.4); font-size:11px; line-height:1.6; }
+        .info span { color:rgba(245,213,160,0.85); font-weight:500; }
+        .winner-text { font-size:26px; font-weight:900; margin-bottom:6px; text-shadow:0 0 25px currentColor; }
+        .winner-sub { color:rgba(245,213,160,0.5); font-size:12px; margin-bottom:20px; }
+        .score-box { display:flex; justify-content:center; gap:35px; margin-bottom:20px; }
+        .score-val { font-size:20px; font-weight:900; }
+        .btn-group { display:flex; gap:10px; justify-content:center; }
+
+        .home-return-btn {
+  position: fixed;
+  right: -1px;
+  top: 15%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 60px;
+  background: rgba(15, 15, 30, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  opacity: 0.7;
+  cursor: pointer;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: opacity 0.2s ease;
+}
+.home-return-btn:active {
+  opacity: 0.75;
+}
+.home-return-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(180deg, #7c3aed, #06b6d4);
+  transition: height 0s; /* Reset instan saat dilepas */
+}
+.home-return-btn.holding .home-return-progress {
+  height: 100%;
+  transition: height 1s linear; /* Durasi tahan 1 detik */
+}
+.home-return-icon {
+  position: relative;
+  z-index: 2;
+  font-size: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}

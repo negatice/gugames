@@ -789,6 +789,39 @@ document.getElementById('soundToggle').addEventListener('click', function() {
   if (state.soundEnabled) audio.play('click');
 });
 
+(function() {
+  const btn = document.getElementById('homeReturnBtn');
+  if (!btn) return;
+
+  let holdTimer = null;
+
+  function startHold(e) {
+    if (e.cancelable) e.preventDefault();
+    btn.classList.add('holding');
+    holdTimer = setTimeout(() => {
+      // Feedback haptic (jika device mendukung)
+      if (navigator.vibrate) navigator.vibrate(30);
+      // Ganti path ini jika struktur folder kamu berbeda
+      window.location.href = '../../index.html';
+    }, 1000); // 1000ms = 1 detik
+  }
+
+  function cancelHold() {
+    btn.classList.remove('holding');
+    clearTimeout(holdTimer);
+  }
+
+  // Mouse events
+  btn.addEventListener('mousedown', startHold);
+  btn.addEventListener('mouseup', cancelHold);
+  btn.addEventListener('mouseleave', cancelHold);
+
+  // Touch events
+  btn.addEventListener('touchstart', startHold, { passive: false });
+  btn.addEventListener('touchend', cancelHold);
+  btn.addEventListener('touchcancel', cancelHold);
+})();
+
 // ==================== INIT ====================
 function init() {
   createBgParticles();

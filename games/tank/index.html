@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚔️ Tank Battle: Desert Storm</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="overlay" id="menuScreen">
+        <div class="bg"></div>
+        <div class="content">
+            <div class="title">⚔️ TANK BATTLE</div>
+            <div class="subtitle">DESERT STORM</div>
+            <div class="preview-box">
+                <div class="tank-card"><canvas id="prevP2" width="70" height="55"></canvas><div class="tank-label p2-c">PLAYER 2</div></div>
+                <div class="tank-card"><canvas id="prevP1" width="70" height="55"></canvas><div class="tank-label p1-c">PLAYER 1</div></div>
+            </div>
+            <button class="btn" onclick="startGame()">▶ MULAI</button>
+            <div class="info">
+                <span>P1 (Bawah)</span> Geser gerak · Tap tembak<br>
+                <span>P2 (Atas)</span> Geser gerak · Tap tembak<br>
+                Kumpulkan <span style="color:#4ecdc4">💎 Power-up</span> · Hindari <span style="color:#ff6b6b">💣 Jebakan</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay hidden" id="gameOverScreen">
+        <div class="bg" style="background:rgba(10,8,4,0.88);backdrop-filter:blur(4px);"></div>
+        <div class="content">
+            <div class="winner-text" id="winText">PLAYER 1 WINS!</div>
+            <div class="winner-sub" id="winSub">🏆 Kemenangan 🏆</div>
+            <div class="score-box">
+                <div class="score-item"><div class="tank-label p1-c">PLAYER 1</div><div class="score-val p1-c" id="fScore1">0</div></div>
+                <div class="score-item"><div class="tank-label p2-c">PLAYER 2</div><div class="score-val p2-c" id="fScore2">0</div></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="resetGame()">MAIN LAGI</button>
+                <button class="btn btn-red" onclick="showMenu()">KELUAR</button>
+            </div>
+        </div>
+    </div>
+    <div class="home-return-btn" id="homeReturnBtn">
+        <div class="home-return-progress"></div>
+        <span class="home-return-icon">❌</span>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

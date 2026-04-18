@@ -720,15 +720,35 @@ function loop() {
 }
 
 // ---- INPUT ----
-function tap(e) { if(e) e.preventDefault(); if(state===ST.PLAY) doDrop(); }
+function doGameTap(e) {
+  if (state === ST.PLAY) doDrop();
+}
 
-// Full-screen touch capture
-document.addEventListener('touchstart', tap, { passive: false });
-document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+document.addEventListener('touchstart', e => {
+  if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+  e.preventDefault();
+  doGameTap(e);
+}, { passive: false });
+
 document.addEventListener('pointerdown', e => {
-  if (e.target.tagName !== 'BUTTON') tap(e);
+  if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+  e.preventDefault();
+  doGameTap(e);
+}, { passive: false });
+
+// Cegah scroll tapi biarkan tombol berfungsi
+document.addEventListener('touchmove', e => {
+  if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    doGameTap(e);
+  }
 });
-document.addEventListener('keydown', e => { if (e.code==='Space'||e.code==='Enter') tap(e); });
 
 // ---- BUTTONS ----
 document.getElementById('btn-start').addEventListener('click', () => {

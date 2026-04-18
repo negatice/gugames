@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>DEFUSE BOMB</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- MENU -->
+  <div id="menu" class="screen active">
+    <div class="logo">💣 DEFUSE</div>
+    <div class="subtitle">B O M B</div>
+    <div class="instructions">
+      <h3>📋 CARA MAIN</h3>
+      <p>
+        1. Ingat urutan warna kabel<br>
+        2. Kabel akan diacak<br>
+        3. <span class="key">Tap 2 kabel</span> untuk tukar posisi<br>
+        4. Tekan <span class="key">DEFUSE</span> sebelum waktu habis!
+      </p>
+    </div>
+    <button class="btn primary" onclick="Game.start(false)">▶ START GAME</button>
+    <button class="btn hardcore" onclick="Game.start(true)">🔥 HARDCORE MODE</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="level" id="hud-level">LEVEL 1</div>
+    <div class="combo" id="hud-combo"></div>
+    <div class="score" id="hud-score">SCORE: 0</div>
+  </div>
+  <div class="progress-bar" id="progress-bar" style="display:none">
+    <div class="fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <!-- LEVEL INTRO -->
+  <div id="level-intro" class="screen">
+    <div class="level-intro" id="intro-level">LEVEL 1</div>
+    <div class="level-info" id="intro-info">3 Kabel — 3 Detik</div>
+  </div>
+
+  <!-- SHOW SEQUENCE -->
+  <div id="show-sequence" class="screen">
+    <div class="memory-label">🔍 INGAT URUTAN INI!</div>
+    <div id="timer-display">3</div>
+    <div class="wire-container" id="mem-wires"></div>
+  </div>
+
+  <!-- PLAYER INPUT -->
+  <div id="player-input" class="screen">
+    <div class="memory-label" style="color:var(--accent)">🔧 SUSUN KABEL DENGAN BENAR</div>
+    <div id="defuse-timer">05</div>
+    <div class="wire-container" id="play-wires"></div>
+    <div class="defuse-area">
+      <button class="btn-defuse" onclick="Game.defuse()">💣 DEFUSE</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="result-success" class="screen">
+    <div class="result-icon">✅</div>
+    <div class="result-title success">SUCCESS</div>
+    <div class="result-sub" id="success-msg">Bom berhasil dijinakkan!</div>
+    <div class="result-stats">
+      <div class="stat-box"><div class="val" id="stat-time">0s</div><div class="lbl">WAKTU</div></div>
+      <div class="stat-box"><div class="val" id="stat-swaps">0</div><div class="lbl">TUKAR</div></div>
+      <div class="stat-box"><div class="val" id="stat-score">0</div><div class="lbl">SKOR</div></div>
+      <div class="stat-box"><div class="val" id="stat-combo">0</div><div class="lbl">COMBO</div></div>
+    </div>
+    <button class="btn primary" onclick="Game.nextLevel()">LEVEL BERIKUTNYA →</button>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="result-fail" class="screen">
+    <div class="result-icon">💥</div>
+    <div class="result-title fail">GAME OVER</div>
+    <div class="result-sub">Bom meledak! Kamu gagal menjinakkannya.</div>
+    <div class="result-stats">
+      <div class="stat-box"><div class="val" id="fail-level">1</div><div class="lbl">LEVEL</div></div>
+      <div class="stat-box"><div class="val" id="fail-score">0</div><div class="lbl">SKOR AKHIR</div></div>
+    </div>
+    <button class="btn primary" onclick="Game.retry()">🔄 RETRY</button>
+    <button class="btn" onclick="Game.toMenu()">🏠 BACK TO MENU</button>
+  </div>
+
+  <!-- WIN -->
+  <div id="result-win" class="screen">
+    <div class="result-icon">🏆</div>
+    <div class="result-title success">ALL CLEAR!</div>
+    <div class="result-sub">Kau berhasil menjinakkan semua bom!</div>
+    <div class="result-stats">
+      <div class="stat-box"><div class="val" id="win-score">0</div><div class="lbl">TOTAL SKOR</div></div>
+      <div class="stat-box"><div class="val" id="win-combo">0</div><div class="lbl">MAX COMBO</div></div>
+    </div>
+    <button class="btn primary" onclick="Game.toMenu()">🏠 BACK TO MENU</button>
+  </div>
+  <div id="explosion"></div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

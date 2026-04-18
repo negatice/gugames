@@ -12,10 +12,12 @@
 
 <div id="ui-overlay">
   <div id="score-display">SCORE: 0</div>
-  <div id="fuel-container">
-    <div id="fuel-bar"></div>
-    <div id="fuel-label">TURBO</div>
+  <div id="powerup-bar">
+    <div id="pill-shield" class="pill shield">🛡️ SHIELD</div>
+    <div id="pill-jammer" class="pill jammer">📡 JAMMER</div>
+    <div id="pill-decoy" class="pill decoy">🎯 DECOY</div>
   </div>
+  <div id="fuel-container"><div id="fuel-bar"></div><div id="fuel-label">TURBO</div></div>
   <div id="cooldown-indicator">⚡ COOLDOWN</div>
 </div>
 
@@ -24,22 +26,32 @@
 <div id="start-screen" class="screen-overlay">
   <h1>JET MANEUVER</h1>
   <div class="subtitle">Hindari rudal! Bertahan hidup!</div>
-  <button id="start-btn">MULAI</button>
+  <div class="difficulty-buttons">
+    <button class="diff-btn easy" data-diff="easy">MUDAH</button>
+    <button class="diff-btn medium" data-diff="medium">SEDANG</button>
+    <button class="diff-btn hard" data-diff="hard">SULIT</button>
+  </div>
   <div class="controls-hint">
     👈 Geser layar kiri: Arah jet<br>
     👉 Tekan tombol kanan: Turbo boost
+  </div>
+  <div class="powerup-legend">
+    Power Up (muncul acak):<br>
+    <span style="background:rgba(0,120,255,0.5);color:#44aaff;">🛡️ Shield</span>
+    <span style="background:rgba(180,0,255,0.5);color:#cc66ff;">📡 Radar Jammer</span>
+    <span style="background:rgba(255,160,0,0.5);color:#ffaa44;">🎯 Decoy</span>
   </div>
 </div>
 
 <div id="game-over-screen" class="screen-overlay hide">
   <h1>GAME OVER</h1>
   <div class="final-score" id="final-score">SCORE: 0</div>
-  <button id="restart-btn">MAIN LAGI</button>
+  <button class="start-main-btn" id="restart-btn">MAIN LAGI</button>
 </div>
 <div class="home-return-btn" id="homeReturnBtn">
-        <div class="home-return-progress"></div>
-        <span class="home-return-icon">❌</span>
-    </div>
+  <div class="home-return-progress"></div>
+  <span class="home-return-icon">❌</span>
+</div>
 <script src="script.js"></script>
 </body>
 </html>

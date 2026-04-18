@@ -264,8 +264,6 @@ function updateUI(){
   const cb=document.getElementById('comboBox');
   if(combo>=2){document.getElementById('comboVal').textContent=combo;cb.classList.add('visible');}
   else cb.classList.remove('visible');
-  const fb=document.getElementById('feedback');
-  if(fbText){fb.textContent=fbText;fb.style.color=fbColor;fb.style.opacity='1';fb.style.transform='translate(-50%,-50%) scale(1.2)';setTimeout(()=>{fb.style.transform='translate(-50%,-50%) scale(1)';fb.style.opacity='0.8';},60);}
 }
 
 /* ======================== DRAW ======================== */

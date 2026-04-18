@@ -12,7 +12,8 @@
             { id: 3, name: "Space Shooter", category: "action", mode: "singleplayer", icon: "👽", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.6, plays: "9.8K", badge: "hot", desc: "Pertahankan galaksi dari invasi alien!", url: "games/space_shooter/index.html" },
             { id: 8, name: "Bom Defuse", category: "action", mode: "singleplayer", icon: "💥", gradient: "linear-gradient(135deg, #14b8a6, #0d9488)", rating: 4.4, plays: "7.2K", badge: "hot", desc: "jinakkan bom sebelum meledak, uji ingatanmu!", url: "games/bom_defuse/index.html" },
             { id: 9, name: "Flying Duck", category: "arcade", mode: "singleplayer", icon: "🦆", gradient: "linear-gradient(135deg, #f97316, #ea580c)", rating: 4.3, plays: "11.3K", badge: "popular", desc: "Tembak semua bebek! dan jaga dirimu!", url: "games/flying_duck/index.html" },
-            { id: 10, name: "Photo Puzzle", category: "strategy", mode: "singleplayer", icon: "🧩", gradient: "linear-gradient(135deg, #64748b, #475569)", rating: 4.5, plays: "6.1K", badge: "new", desc: "Upload foto dan susun kembali foto mu!", url: "games/photo_puzzle/index.html" }
+            { id: 10, name: "Photo Puzzle", category: "strategy", mode: "singleplayer", icon: "🧩", gradient: "linear-gradient(135deg, #64748b, #475569)", rating: 4.5, plays: "6.1K", badge: "new", desc: "Upload foto dan susun kembali foto mu!", url: "games/photo_puzzle/index.html" },
+            { id: 11, name: "Stack Tower", category: "strategy", mode: "singleplayer", icon: "🟰", gradient: "linear-gradient(135deg, #22c55e, #16a34a)", rating: 4.7, plays: "14.8K", badge: "hot", desc: "tumpuk blok-bloknya sebanyak mungkin!", url: "games/stack_tower/index.html" },
         ];
 
         // ============================================

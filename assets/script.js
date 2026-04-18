@@ -11,7 +11,7 @@
             { id: 6, name: "Jet Manuver", category: "action", mode: "singleplayer", icon: "🚀", gradient: "linear-gradient(135deg, #ec4899, #db2777)", rating: 4.1, plays: "5.4K", badge: "new", desc: "Jadi Pilot pemberani, taklukan semua missile!", url: "games/jet_manuver/index.html" },
             { id: 3, name: "Space Shooter", category: "action", mode: "singleplayer", icon: "👽", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.6, plays: "9.8K", badge: "hot", desc: "Pertahankan galaksi dari invasi alien!", url: "games/space_shooter/index.html" },
             { id: 8, name: "Bom Defuse", category: "action", mode: "singleplayer", icon: "💥", gradient: "linear-gradient(135deg, #14b8a6, #0d9488)", rating: 4.4, plays: "7.2K", badge: null, desc: "jinakkan bom sebelum meledak, uji ingatanmu!", url: "games/bom_defuse/index.html" },
-            // { id: 9, name: "Brick Breaker", category: "arcade", mode: "singleplayer", icon: "🧱", gradient: "linear-gradient(135deg, #f97316, #ea580c)", rating: 4.3, plays: "11.3K", badge: "popular", desc: "Hancurkan semua bata dengan bola pantul!", url: "games/brickbreaker/index.html" },
+            { id: 9, name: "Flying Duck", category: "arcade", mode: "singleplayer", icon: "🦆", gradient: "linear-gradient(135deg, #f97316, #ea580c)", rating: 4.3, plays: "11.3K", badge: "popular", desc: "Tembak semua bebek! dan jaga dirimu!", url: "games/flying_duck/index.html" },
             // { id: 10, name: "Tower Defense", category: "strategy", mode: "multiplayer", icon: "🏰", gradient: "linear-gradient(135deg, #64748b, #475569)", rating: 4.5, plays: "6.1K", badge: "new", desc: "Bangun menara pertahanan dan lindungi markasmu!", url: "games/towerdefense/index.html" }
         ];
 

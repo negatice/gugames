@@ -354,12 +354,13 @@ function aiDecideShot() {
 // SHOOTING LOGIC
 // ============================================================
 
-function fireShot(startX, startY, endX, endY) {
+  function fireShot(startX, startY, endX, endY) {
   const dx = endX - startX;
   const dy = endY - startY;
   const distSwipe = Math.sqrt(dx * dx + dy * dy);
+
+  // Jika swipe terlalu pendek, default shoot ke atas tengah
   if (distSwipe < 10) {
-    // Swipe terlalu pendek — default shoot ke atas tengah
     endX = W / 2;
     endY = startY - 80;
   }
@@ -367,16 +368,25 @@ function fireShot(startX, startY, endX, endY) {
   playSound('kick');
   vibrate(30);
 
-  const angle = Math.atan2(endY - startY, endX - startX);
   const power = clamp(distSwipe / (H * 0.5), 0.3, 1.0);
 
+  // FIX: gunakan posisi X swipe langsung untuk menentukan arah horizontal
+  // Offset dari tengah layar → offset ke gawang
+  const screenOffsetX = endX - W / 2;
+  const maxOffset = W / 2;
+
+  // Makin jauh swipe dari tengah → makin ke pojok gawang
   const goalTargetX = clamp(
-    W / 2 + Math.cos(angle) * GOAL_WIDTH * 0.6 * power,
-    goal.x - goal.w / 2 + 10,
-    goal.x + goal.w / 2 - 10
+    W / 2 + (screenOffsetX / maxOffset) * (goal.w / 2) * 0.85,
+    goal.x - goal.w / 2 + 15,
+    goal.x + goal.w / 2 - 15
   );
+
+  // Arah vertikal: swipe ke atas = tembak rendah/tinggi
+  // dy negatif = swipe ke atas = tembak ke atas gawang
+  const verticalRatio = clamp(-dy / (H * 0.4), 0, 1);
   const goalTargetY = clamp(
-    goal.y + goal.h * 0.3 + Math.sin(angle) * GOAL_HEIGHT * 0.4,
+    goal.y + goal.h * (0.85 - verticalRatio * 0.7),
     goal.y + 5,
     goal.y + goal.h - 5
   );
@@ -385,7 +395,6 @@ function fireShot(startX, startY, endX, endY) {
   ball.y = H * 0.78;
   ball.z = 0;
 
-  // Pastikan flightFrames tidak pernah 0 atau NaN
   const rawFrames = 40 - power * 15;
   ball.flightFrames = Math.max(10, Math.round(rawFrames));
   ball.currentFrame = 0;
@@ -401,7 +410,7 @@ function fireShot(startX, startY, endX, endY) {
   ball.trail = [];
   ball.displayRadius = ball.radius;
 
-  // Record player pattern
+  // Record arah untuk AI memory
   const dir = goalTargetX < W / 2 - 30 ? -1 : goalTargetX > W / 2 + 30 ? 1 : 0;
   aiMemory[dir === -1 ? 'left' : dir === 1 ? 'right' : 'center']++;
   aiMemory.total++;

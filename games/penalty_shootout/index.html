@@ -168,8 +168,8 @@ const STATES = {
 
 // --- Game Config ---
 const ROUNDS = 5;
-const GOAL_WIDTH = 220;
-const GOAL_HEIGHT = 100;
+const GOAL_WIDTH = 300;
+const GOAL_HEIGHT = 130;
 const BALL_RADIUS = 12;
 
 // --- Game Data ---
@@ -1050,73 +1050,326 @@ function drawGoalkeeper() {
   const kw = keeper.width;
   const kh = keeper.height;
 
-  // Keeper shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  const diveAngle = keeper.diving
+    ? keeper.diveDir * Math.PI * 0.35 * keeper.diveProgress
+    : 0;
+  const diveOffsetX = keeper.diving
+    ? keeper.diveDir * kw * 0.8 * keeper.diveProgress
+    : 0;
+  const diveOffsetY = keeper.diving
+    ? Math.abs(keeper.diveProgress) * kh * 0.3
+    : 0;
+
+  ctx.save();
+  ctx.translate(kx + diveOffsetX, ky + diveOffsetY);
+  ctx.rotate(diveAngle);
+
+  // --- SHADOW ---
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
-  ctx.ellipse(kx, ky + kh / 2 + 5, kw * 0.6, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, kh * 0.52, kw * 0.55, 7, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Keeper body
-  const bodyGrad = ctx.createLinearGradient(kx - kw / 2, ky - kh / 2, kx + kw / 2, ky + kh / 2);
-  bodyGrad.addColorStop(0, '#FF6B35');
-  bodyGrad.addColorStop(1, '#E84500');
-  ctx.fillStyle = bodyGrad;
+  // --- LEGS ---
+  const legSpread = keeper.diving
+    ? keeper.diveDir * 10 * keeper.diveProgress
+    : 0;
 
-  // Torso
-  ctx.fillRect(kx - kw / 3, ky - kh / 4, kw * 2 / 3, kh * 0.6);
-
-  // Head
-  ctx.fillStyle = '#FFDBB4';
-  ctx.beginPath();
-  ctx.arc(kx, ky - kh / 3, kw * 0.25, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Arms
-  const armAngle = keeper.diving ? keeper.diveDir * Math.PI * 0.4 * keeper.diveProgress : 0;
-  ctx.strokeStyle = '#FFDBB4';
-  ctx.lineWidth = 6;
+  // Left leg — thigh
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 9;
   ctx.lineCap = 'round';
-
-  // Left arm
   ctx.beginPath();
-  ctx.moveTo(kx - kw / 3, ky - kh / 6);
-  ctx.lineTo(kx - kw / 2 - 10 + armAngle * 20, ky - kh / 3 - armAngle * 30);
+  ctx.moveTo(-8, kh * 0.18);
+  ctx.lineTo(-12 - legSpread, kh * 0.38);
   ctx.stroke();
-
-  // Right arm
-  ctx.beginPath();
-  ctx.moveTo(kx + kw / 3, ky - kh / 6);
-  ctx.lineTo(kx + kw / 2 + 10 + armAngle * 20, ky - kh / 3 - armAngle * 30);
-  ctx.stroke();
-
-  // Legs
-  ctx.strokeStyle = '#222';
+  // Left leg — shin
   ctx.lineWidth = 7;
   ctx.beginPath();
-  ctx.moveTo(kx - kw / 4, ky + kh / 3);
-  ctx.lineTo(kx - kw / 3, ky + kh / 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(kx + kw / 4, ky + kh / 3);
-  ctx.lineTo(kx + kw / 3, ky + kh / 2);
+  ctx.moveTo(-12 - legSpread, kh * 0.38);
+  ctx.lineTo(-10 - legSpread * 0.5, kh * 0.52);
   ctx.stroke();
 
-  // Gloves
-  ctx.fillStyle = '#00CC44';
-  const gloveSize = 8;
+  // Right leg — thigh
+  ctx.lineWidth = 9;
   ctx.beginPath();
-  ctx.arc(kx - kw / 2 - 10 + armAngle * 20, ky - kh / 3 - armAngle * 30, gloveSize, 0, Math.PI * 2);
+  ctx.moveTo(8, kh * 0.18);
+  ctx.lineTo(12 + legSpread, kh * 0.38);
+  ctx.stroke();
+  // Right leg — shin
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(12 + legSpread, kh * 0.38);
+  ctx.lineTo(10 + legSpread * 0.5, kh * 0.52);
+  ctx.stroke();
+
+  // Boots
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.ellipse(-10 - legSpread * 0.5, kh * 0.54, 8, 4, -0.2, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(kx + kw / 2 + 10 + armAngle * 20, ky - kh / 3 - armAngle * 30, gloveSize, 0, Math.PI * 2);
+  ctx.ellipse(10 + legSpread * 0.5, kh * 0.54, 8, 4, 0.2, 0, Math.PI * 2);
   ctx.fill();
+
+  // Boot stripes
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 1.5;
+  for (let s = -1; s <= 1; s++) {
+    ctx.beginPath();
+    ctx.moveTo(-13 - legSpread * 0.5 + s * 3, kh * 0.52);
+    ctx.lineTo(-9 - legSpread * 0.5 + s * 3, kh * 0.56);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(7 + legSpread * 0.5 + s * 3, kh * 0.52);
+    ctx.lineTo(11 + legSpread * 0.5 + s * 3, kh * 0.56);
+    ctx.stroke();
+  }
+
+  // Shin guards
+  ctx.fillStyle = '#FFFFFF';
+  ctx.globalAlpha = 0.3;
+  ctx.fillRect(-15 - legSpread, kh * 0.37, 6, 10);
+  ctx.fillRect(9 + legSpread, kh * 0.37, 6, 10);
+  ctx.globalAlpha = 1;
+
+  // --- SHORTS ---
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.moveTo(-kw * 0.32, kh * 0.05);
+  ctx.lineTo(kw * 0.32, kh * 0.05);
+  ctx.lineTo(kw * 0.28, kh * 0.22);
+  ctx.lineTo(kw * 0.08, kh * 0.22);
+  ctx.lineTo(0, kh * 0.19);
+  ctx.lineTo(-kw * 0.08, kh * 0.22);
+  ctx.lineTo(-kw * 0.28, kh * 0.22);
+  ctx.closePath();
+  ctx.fill();
+
+  // --- JERSEY BODY ---
+  const jerseyGrad = ctx.createLinearGradient(-kw * 0.35, -kh * 0.3, kw * 0.35, kh * 0.1);
+  jerseyGrad.addColorStop(0, '#FF8C42');
+  jerseyGrad.addColorStop(0.4, '#FF6B35');
+  jerseyGrad.addColorStop(1, '#CC4400');
+  ctx.fillStyle = jerseyGrad;
+  ctx.beginPath();
+  ctx.moveTo(-kw * 0.1, -kh * 0.32);
+  ctx.lineTo(kw * 0.1, -kh * 0.32);
+  ctx.lineTo(kw * 0.35, -kh * 0.18);
+  ctx.lineTo(kw * 0.35, kh * 0.08);
+  ctx.lineTo(-kw * 0.35, kh * 0.08);
+  ctx.lineTo(-kw * 0.35, -kh * 0.18);
+  ctx.closePath();
+  ctx.fill();
+
+  // Jersey collar
+  ctx.fillStyle = '#FF8C42';
+  ctx.beginPath();
+  ctx.moveTo(-kw * 0.1, -kh * 0.32);
+  ctx.quadraticCurveTo(0, -kh * 0.38, kw * 0.1, -kh * 0.32);
+  ctx.quadraticCurveTo(0, -kh * 0.28, -kw * 0.1, -kh * 0.32);
+  ctx.fill();
+
+  // Jersey stripes
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-kw * 0.12, -kh * 0.3);
+  ctx.lineTo(-kw * 0.15, kh * 0.08);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(kw * 0.12, -kh * 0.3);
+  ctx.lineTo(kw * 0.15, kh * 0.08);
+  ctx.stroke();
 
   // Jersey number
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = `bold ${14 * scale}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = `bold ${13 * scale}px Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('1', kx, ky);
+  ctx.fillText('1', 0, -kh * 0.08);
+
+  // --- ARMS ---
+  const armExtend = keeper.diving
+    ? keeper.diveDir * Math.PI * 0.5 * keeper.diveProgress
+    : Math.sin(Date.now() * 0.002) * 0.08;
+
+  // Left arm — upper
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-kw * 0.35, -kh * 0.15);
+  ctx.lineTo(-kw * 0.35 - Math.cos(armExtend + 0.3) * 18,
+              -kh * 0.15 - Math.sin(armExtend + 0.3) * 18);
+  ctx.stroke();
+  // Left arm — forearm
+  ctx.strokeStyle = '#FFDBB4';
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  const lax = -kw * 0.35 - Math.cos(armExtend + 0.3) * 18;
+  const lay = -kh * 0.15 - Math.sin(armExtend + 0.3) * 18;
+  ctx.moveTo(lax, lay);
+  ctx.lineTo(lax - Math.cos(armExtend - 0.2) * 16,
+              lay - Math.sin(armExtend - 0.2) * 16);
+  ctx.stroke();
+
+  // Right arm — upper
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(kw * 0.35, -kh * 0.15);
+  ctx.lineTo(kw * 0.35 + Math.cos(armExtend + 0.3) * 18,
+              -kh * 0.15 - Math.sin(armExtend + 0.3) * 18);
+  ctx.stroke();
+  // Right arm — forearm
+  ctx.strokeStyle = '#FFDBB4';
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  const rax = kw * 0.35 + Math.cos(armExtend + 0.3) * 18;
+  const ray = -kh * 0.15 - Math.sin(armExtend + 0.3) * 18;
+  ctx.moveTo(rax, ray);
+  ctx.lineTo(rax + Math.cos(armExtend - 0.2) * 16,
+              ray - Math.sin(armExtend - 0.2) * 16);
+  ctx.stroke();
+
+  // --- GLOVES ---
+  // Left glove
+  ctx.fillStyle = '#00AA33';
+  const lgx = lax - Math.cos(armExtend - 0.2) * 16;
+  const lgy = lay - Math.sin(armExtend - 0.2) * 16;
+  ctx.beginPath();
+  ctx.ellipse(lgx, lgy, 9, 7, armExtend, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#007722';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // Glove fingers
+  ctx.strokeStyle = '#007722';
+  ctx.lineWidth = 1.5;
+  for (let f = 0; f < 3; f++) {
+    const fa = armExtend + (f - 1) * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(lgx, lgy);
+    ctx.lineTo(lgx + Math.cos(fa) * 7, lgy + Math.sin(fa) * 7);
+    ctx.stroke();
+  }
+
+  // Right glove
+  ctx.fillStyle = '#00AA33';
+  const rgx = rax + Math.cos(armExtend - 0.2) * 16;
+  const rgy = ray - Math.sin(armExtend - 0.2) * 16;
+  ctx.beginPath();
+  ctx.ellipse(rgx, rgy, 9, 7, -armExtend, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#007722';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  for (let f = 0; f < 3; f++) {
+    const fa = -armExtend + (f - 1) * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(rgx, rgy);
+    ctx.lineTo(rgx + Math.cos(fa) * 7, rgy + Math.sin(fa) * 7);
+    ctx.stroke();
+  }
+
+  // --- NECK ---
+  ctx.fillStyle = '#FFDBB4';
+  ctx.beginPath();
+  ctx.ellipse(0, -kh * 0.33, 5, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // --- HEAD ---
+  // Hair
+  ctx.fillStyle = '#1a0a00';
+  ctx.beginPath();
+  ctx.ellipse(0, -kh * 0.48, kw * 0.22, kw * 0.24, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Face
+  const faceGrad = ctx.createRadialGradient(
+    -2, -kh * 0.5, 1,
+    0, -kh * 0.48, kw * 0.2
+  );
+  faceGrad.addColorStop(0, '#FFE0B2');
+  faceGrad.addColorStop(1, '#FFCC80');
+  ctx.fillStyle = faceGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, -kh * 0.48, kw * 0.19, kw * 0.21, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.ellipse(-kw * 0.07, -kh * 0.5, 2.5, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(kw * 0.07, -kh * 0.5, 2.5, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Eye shine
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(-kw * 0.065, -kh * 0.51, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(kw * 0.075, -kh * 0.51, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyebrows — tegang saat dive
+  ctx.strokeStyle = '#1a0a00';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  const browTilt = keeper.diving ? keeper.diveDir * 0.3 * keeper.diveProgress : 0;
+  ctx.moveTo(-kw * 0.12, -kh * 0.535 + browTilt * 3);
+  ctx.lineTo(-kw * 0.03, -kh * 0.53 - browTilt * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(kw * 0.03, -kh * 0.53 + browTilt * 2);
+  ctx.lineTo(kw * 0.12, -kh * 0.535 - browTilt * 3);
+  ctx.stroke();
+
+  // Nose
+  ctx.strokeStyle = '#D4956A';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, -kh * 0.48);
+  ctx.lineTo(-2, -kh * 0.46);
+  ctx.lineTo(2, -kh * 0.46);
+  ctx.stroke();
+
+  // Mouth — senyum atau tegang
+  ctx.strokeStyle = '#C0785A';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (keeper.diving && keeper.diveProgress > 0.3) {
+    // Mulut terbuka saat dive
+    ctx.arc(0, -kh * 0.435, 4, 0.2, Math.PI - 0.2);
+  } else {
+    ctx.arc(0, -kh * 0.45, 3, 0.1, Math.PI - 0.1);
+  }
+  ctx.stroke();
+
+  // Ear
+  ctx.fillStyle = '#FFCC80';
+  ctx.beginPath();
+  ctx.ellipse(-kw * 0.19, -kh * 0.48, 3, 4, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(kw * 0.19, -kh * 0.48, 3, 4, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // --- KEEPER GLOVE BAND ---
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(lgx, lgy, 6, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(rgx, rgy, 6, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
 }
 
 function drawParticles() {

@@ -268,35 +268,68 @@ function update(dt) {
       break;
 
     case 'HOOKED': {
-      const f = hook.caughtFish;
-      if(!f) { hook.state = 'reel'; break; }
-      
-      hook.hookTime += dt;
-      hook.tension += 0.15 * dt;
-      hook.x += Math.sin(Date.now()*0.005*f.type.res)*40*f.type.res*dt*SCALE;
-      hook.y += f.type.res*35*dt;
-      hook.x = Math.max(15, Math.min(W-15, hook.x)); hook.y = Math.min(H-40, hook.y);
-      hook.depth = hook.y - 65*SCALE; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
+    const f = hook.caughtFish;
+    if (!f) { hook.state = 'reel'; break; }
 
-      if(reelBtn.pressed && energy > 0) {
-        energy -= (12 + f.type.res*6) * dt;
-        hook.y -= 70 * dt; f.currentHP -= (18 + f.type.res*1.5) * dt;
-        hook.tension += 2.8 * dt;
-        if(Math.random() < 0.15) playSound('struggle');
-      } else {
-        hook.tension += 0.3 * dt;
-        f.currentHP += 1.0 * dt;
-        if(hook.hookTime > 6) { escapeFish(); return; }
-      }
-      
-      hook.tension = Math.max(0, Math.min(1, hook.tension));
-      f.currentHP = Math.max(0, Math.min(f.type.hp, f.currentHP));
+    hook.hookTime += dt;
 
-      if(f.currentHP <= 0) { landFish(f); }
-      else if(hook.tension >= 1) { snapLine(); }
-      else if(energy <= 0 && !reelBtn.pressed) { hook.tension += 0.5 * dt; }
-      break;
+    // Ikan selalu berusaha kabur → tension naik pelan
+    const fishPull = f.type.res * 0.08;
+    hook.tension += fishPull * dt;
+
+    // Gerak ikan yang ditangkap
+    hook.x += Math.sin(Date.now() * 0.005 * f.type.res) * 30 * f.type.res * dt * SCALE;
+    hook.x = Math.max(15, Math.min(W - 15, hook.x));
+
+    if (reelBtn.pressed && energy > 0) {
+      // Reel ditekan → tension naik, tapi HP ikan berkurang
+      energy -= (10 + f.type.res * 5) * dt;
+      hook.tension += f.type.res * 0.25 * dt;
+      f.currentHP -= (15 + f.type.res * 2) * dt;
+      hook.y -= 55 * dt;
+      if (Math.random() < 0.12) playSound('struggle');
+    } else {
+      // Reel TIDAK ditekan → tension turun (kasih slack)
+      hook.tension -= 0.18 * dt;
     }
+
+    // Ikan berenang ke bawah terus jika tidak direel
+    if (!reelBtn.pressed) {
+      hook.y += f.type.res * 25 * dt;
+    }
+
+    hook.y = Math.max(75 * SCALE, Math.min(H - 40, hook.y));
+    hook.depth = hook.y - 65 * SCALE;
+    hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
+
+    // Clamp tension 0–1
+    hook.tension = Math.max(0, Math.min(1, hook.tension));
+    f.currentHP = Math.max(0, Math.min(f.type.hp, f.currentHP));
+
+    // Terlalu kendor → ikan lepas
+    if (hook.tension < 0.15) {
+      escapeFish();
+      return;
+    }
+
+    // Terlalu tegang → tali putus
+    if (hook.tension >= 0.92) {
+      snapLine();
+      return;
+    }
+
+    // HP habis → ikan berhasil ditangkap
+    if (f.currentHP <= 0) {
+      landFish(f);
+    }
+
+    // Timeout jika terlalu lama tidak progress
+    if (hook.hookTime > 20) {
+      escapeFish();
+    }
+    break;
+  }
+
 
     case 'reel':
       if(hook.caughtFish) hook.y -= 160*dt; else hook.y -= 200*dt;
@@ -335,7 +368,7 @@ function update(dt) {
 function updateArr(arr, cond) { for(let i=arr.length-1; i>=0; i--) if(!cond(arr[i])) arr.splice(i,1); }
 
 function catchFish(f) {
-  f.alive = false; hook.caughtFish = f; hook.state = 'HOOKED'; hook.tension = 0.2; hook.hookTime = 0;
+  f.alive = false; hook.caughtFish = f; hook.state = 'HOOKED'; hook.tension = 0.45; hook.hookTime = 0;
   sessionFish.push({ ...f.type, caught: true, caughtWeight: f.type.weight });
   combo++; maxCombo = Math.max(maxCombo, combo);
   playSound('splash'); vibrate(30);
@@ -635,22 +668,91 @@ function renderUI() {
 
   ctx.textAlign='center'; ctx.font=`${11*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.fillText(`🌊 ${Math.floor(hook.depth/SCALE)}m`,W/2,36*SCALE);
 
-  if(hook.state==='HOOKED' && hook.caughtFish) {
-    const barY=44*SCALE, barH=10*SCALE, barW=220*SCALE, barX=(W-barW)/2;
-    const tension=hook.tension;
-    ctx.fillStyle='rgba(0,0,0,0.8)'; roundRect(barX-3,barY-2,barW+6,barH+4,5*SCALE); ctx.fill();
-    const grd=ctx.createLinearGradient(barX,0,barX+barW,0);
-    grd.addColorStop(0,'#4CAF50'); grd.addColorStop(0.5,'#FFC107'); grd.addColorStop(0.8,'#F44336'); grd.addColorStop(1,'#B71C1C');
-    ctx.fillStyle=grd; roundRect(barX,barY,barW*tension,barH,3*SCALE); ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1; roundRect(barX,barY,barW,barH,3*SCALE); ctx.stroke();
-    const mx=barX+barW*tension;
-    ctx.fillStyle='#FFF'; ctx.beginPath(); ctx.arc(mx,barY+barH/2,4*SCALE,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#000'; ctx.stroke();
-    ctx.font=`bold ${8*SCALE}px Arial`; ctx.textAlign='center';
-    ctx.fillStyle='#4CAF50'; ctx.fillText('AMAN',barX+15*SCALE,barY-3*SCALE);
-    ctx.fillStyle='#F44336'; ctx.fillText('PUTUS',barX+barW-15*SCALE,barY-3*SCALE);
-    if(tension>0.75 && Math.sin(Date.now()*0.012)>0){ ctx.fillStyle='rgba(244,67,54,0.1)'; ctx.fillRect(0,0,W,H); ctx.font=`bold ${10*SCALE}px Arial`; ctx.fillStyle='#F44336'; ctx.fillText('⚠️ LEPAS TOMBOL!',W/2,60*SCALE); }
+  if (hook.state === 'HOOKED' && hook.caughtFish) {
+  const barH = 14 * SCALE;
+  const barW = 240 * SCALE;
+  const barX = (W - barW) / 2;
+  const barY = 42 * SCALE;
+  const tension = hook.tension;
+
+  // Background bar
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  roundRect(barX - 3, barY - 2, barW + 6, barH + 4, 6 * SCALE);
+  ctx.fill();
+
+  // Zona warna: biru=kendor, hijau=aman, kuning=hati2, merah=putus
+  const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+  grad.addColorStop(0,    '#1565C0'); // terlalu kendor
+  grad.addColorStop(0.15, '#2196F3'); // batas lepas
+  grad.addColorStop(0.20, '#4CAF50'); // zona aman mulai
+  grad.addColorStop(0.65, '#8BC34A'); // zona aman
+  grad.addColorStop(0.75, '#FFC107'); // mulai bahaya
+  grad.addColorStop(0.88, '#F44336'); // sangat tegang
+  grad.addColorStop(1.0,  '#B71C1C'); // putus
+  ctx.fillStyle = grad;
+  roundRect(barX, barY, barW, barH, 4 * SCALE);
+  ctx.fill();
+
+  // Overlay gelap untuk bagian yang belum dicapai
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  roundRect(barX + barW * tension, barY,
+            barW * (1 - tension), barH, 4 * SCALE);
+  ctx.fill();
+
+  // Marker posisi saat ini
+  const mx = barX + barW * tension;
+  ctx.fillStyle = '#FFF';
+  ctx.beginPath();
+  ctx.arc(mx, barY + barH / 2, 6 * SCALE, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Garis batas "akan lepas" (kiri)
+  ctx.strokeStyle = 'rgba(33,150,243,0.9)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(barX + barW * 0.15, barY - 4);
+  ctx.lineTo(barX + barW * 0.15, barY + barH + 4);
+  ctx.stroke();
+
+  // Garis batas "akan putus" (kanan)
+  ctx.strokeStyle = 'rgba(244,67,54,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(barX + barW * 0.88, barY - 4);
+  ctx.lineTo(barX + barW * 0.88, barY + barH + 4);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Label
+  ctx.font = `bold ${9 * SCALE}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#90CAF9';
+  ctx.fillText('LEPAS', barX + barW * 0.075, barY - 4 * SCALE);
+  ctx.fillStyle = '#A5D6A7';
+  ctx.fillText('ZONA AMAN', barX + barW * 0.50, barY - 4 * SCALE);
+  ctx.fillStyle = '#EF9A9A';
+  ctx.fillText('PUTUS', barX + barW * 0.94, barY - 4 * SCALE);
+
+  // Peringatan tegang
+  if (tension > 0.80) {
+    ctx.fillStyle = `rgba(244,67,54,${0.15 + Math.sin(Date.now() * 0.015) * 0.1})`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = `bold ${11 * SCALE}px Arial`;
+    ctx.fillStyle = '#F44336';
+    ctx.fillText('⚠️ KENDURKAN REEL!', W / 2, 65 * SCALE);
   }
+
+  // Peringatan kendor
+  if (tension < 0.25) {
+    ctx.font = `bold ${11 * SCALE}px Arial`;
+    ctx.fillStyle = '#2196F3';
+    ctx.textAlign = 'center';
+    ctx.fillText('⬆️ TARIK REEL!', W / 2, 65 * SCALE);
+  }
+}
 
   ctx.textAlign='right'; ctx.font=`${11*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.fillText(`⚡${Math.floor(energy)}%`,W-10*SCALE,18*SCALE);
   const ebW=60*SCALE, ebX=W-10*SCALE-ebW, ebY=30*SCALE;

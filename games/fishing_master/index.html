@@ -155,10 +155,13 @@ function spawnFish() {
   const totalW = weights.reduce((a,b)=>a+b,0);
   let r = Math.random()*totalW, type = pool[0];
   for(let i=0; i<pool.length; i++) { r -= weights[i]; if(r<=0) { type=pool[i]; break; } }
-  const dir = Math.random()<0.5 ? 1 : -1;
+  
+  const fromRight = Math.random() < 0.5;
   fishes.push({
-    x: dir===1 ? W+30 : -30, y: 90*SCALE+Math.random()*(H-200*SCALE),
-    vx: type.speed*dir, vy: 0, type, alive: true,
+    x: fromRight ? W+30 : -30,
+    y: 90*SCALE + Math.random()*(H-200*SCALE),
+    vx: fromRight ? -type.speed : type.speed, // ✅ ARAH KE DALAM LAYAR
+    vy: 0, type, alive: true,
     time: Math.random()*100, phase: Math.random()*Math.PI*2, turnT: 0, currentHP: type.hp
   });
 }

@@ -205,37 +205,50 @@ function update(dt) {
   }
 
   if (gameState === STATE.RESULT) {
-    // progress animasi kartu hasil
-    resultAnim.progress += dt * 0.6;
-    if (resultAnim.progress > 1) resultAnim.progress = 1;
+  resultAnim.progress += dt * 0.6;
+  if (resultAnim.progress > 1) resultAnim.progress = 1;
 
-    // particles terus di-update — INI yang bikin animasi jalan terus
-    for (let i = resultAnim.particles.length - 1; i >= 0; i--) {
-      let p = resultAnim.particles[i];
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 30 * dt;
-      p.life -= dt;
-      if (p.life <= 0) resultAnim.particles.splice(i, 1);
-    }
-
-    // Spawn particle baru terus-menerus, tidak dibatasi progress
-    if (resultAnim.particles.length < 60 && Math.random() < 0.4) {
-      resultAnim.particles.push({
-        x: W / 2 + (Math.random() - 0.5) * 300 * SCALE,
-        y: H / 2 + (Math.random() - 0.5) * 200 * SCALE,
-        vx: (Math.random() - 0.5) * 120,
-        vy: (Math.random() - 0.5) * 120 - 60,
-        life: 2 + Math.random(),
-        size: 4 + Math.random() * 6 * SCALE,
-        color: ['#FFD700','#FF5722','#4CAF50','#2196F3','#E91E63','#FFC107'][
-          Math.floor(Math.random() * 6)
-        ]
-      });
-    }
-
-    return; // tetap return agar logika game tidak jalan
+  // Update + spawn bubbles agar background tetap hidup
+  updateArr(bubbles, b => {
+    b.y -= 35 * dt;
+    b.phase += dt * 3;
+    b.x += Math.sin(b.phase) * 10 * dt;
+    return b.y > -10;
+  });
+  if (Math.random() < 0.12) {
+    bubbles.push({
+      x: Math.random() * W,
+      y: H + 5,
+      phase: Math.random() * Math.PI * 2,
+      size: 2 + Math.random() * 3,
+      alpha: 0.3
+    });
   }
+
+  // Update celebration particles
+  for (let i = resultAnim.particles.length - 1; i >= 0; i--) {
+    let p = resultAnim.particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 30 * dt;
+    p.life -= dt;
+    if (p.life <= 0) resultAnim.particles.splice(i, 1);
+  }
+  if (resultAnim.particles.length < 60 && Math.random() < 0.4) {
+    resultAnim.particles.push({
+      x: W / 2 + (Math.random() - 0.5) * 300 * SCALE,
+      y: H / 2 + (Math.random() - 0.5) * 200 * SCALE,
+      vx: (Math.random() - 0.5) * 120,
+      vy: (Math.random() - 0.5) * 120 - 60,
+      life: 2 + Math.random(),
+      size: 4 + Math.random() * 6 * SCALE,
+      color: ['#FFD700','#FF5722','#4CAF50',
+              '#2196F3','#E91E63','#FFC107'][Math.floor(Math.random() * 6)]
+    });
+  }
+
+  return;
+}
 
   if (gameState !== STATE.PLAYING) return;
   gameTimer -= dt;
@@ -376,18 +389,37 @@ function update(dt) {
 function updateArr(arr, cond) { for(let i=arr.length-1; i>=0; i--) if(!cond(arr[i])) arr.splice(i,1); }
 
 function catchFish(f) {
-  f.alive = false; hook.caughtFish = f; hook.state = 'HOOKED'; hook.tension = 0.45; hook.hookTime = 0;
-  sessionFish.push({ ...f.type, caught: true, caughtWeight: f.type.weight });
-  combo++; maxCombo = Math.max(maxCombo, combo);
-  playSound('splash'); vibrate(30);
-  addFloatingText('⚡ STRIKE!', W/2, 110*SCALE, '#FF5722');
+  f.alive = false;
+  hook.caughtFish = f;
+  hook.state = 'HOOKED';
+  hook.tension = 0.45;
+  hook.hookTime = 0;
+
+  // Simpan referensi type yang benar untuk renderResult
+  sessionFish.push({
+    name: f.type.name,
+    emoji: f.type.emoji,
+    weight: f.type.weight,   // ← langsung di root, bukan nested
+    color: f.type.color || '#4FC3F7'
+  });
+
+  combo++;
+  maxCombo = Math.max(maxCombo, combo);
+  playSound('splash');
+  vibrate(30);
+  addFloatingText('⚡ STRIKE!', W / 2, 110 * SCALE, '#FF5722');
 }
 
 function landFish(f) {
+  if (!f) return;
   totalWeight += f.type.weight;
-  playSound('catch'); vibrate([30,20,30]);
-  addFloatingText(`✅ +${fmtWeight(f.type.weight)}`, W/2, 100*SCALE, '#4CAF50');
-  hook.state = 'reel'; hook.caughtFish = null; hook.tension = 0; hook.hookTime = 0;
+  playSound('catch');
+  vibrate([30, 20, 30]);
+  addFloatingText(`✅ +${fmtWeight(f.type.weight)}`, W / 2, 100 * SCALE, '#4CAF50');
+  hook.state = 'reel';
+  hook.caughtFish = null;
+  hook.tension = 0;
+  hook.hookTime = 0;
 }
 
 function snapLine() {
@@ -817,6 +849,14 @@ function renderResult() {
   g.addColorStop(1, '#000B1E');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
+  for (let b of bubbles) {
+    ctx.globalAlpha = b.alpha;
+    ctx.fillStyle = '#FFF';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 
   // Celebration particles
   for(let p of resultAnim.particles) {
@@ -932,12 +972,20 @@ function renderResult() {
   ctx.fillText('📋 Detail Tangkapan', W/2, listY);
 
   const grouped = {};
-  for(let f of sessionFish) {
-    if(!grouped[f.name]) grouped[f.name] = {count:0, total:0, emoji:f.emoji, color:f.color};
+  for (let f of sessionFish) {
+    if (!grouped[f.name]) {
+      grouped[f.name] = {
+        count: 0,
+        total: 0,
+        emoji: f.emoji,
+        color: f.color
+      };
+    }
     grouped[f.name].count++;
-    grouped[f.name].total += f.type.weight;
+    grouped[f.name].total += f.weight;  // ← f.weight bukan f.type.weight
   }
-  const sorted = Object.entries(grouped).sort((a,b) => b[1].total - a[1].total);
+  const sorted = Object.entries(grouped)
+    .sort((a, b) => b[1].total - a[1].total);
   
   let ly = listY + 30*SCALE;
   const maxVisible = 5;

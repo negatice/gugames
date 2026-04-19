@@ -101,15 +101,26 @@ const FISH_IMAGE_SOURCES = {
   'tuna':   'assets/images/fish/tuna.png',
 };
 
-let imagesLoaded = 0;
-const totalImages = Object.keys(FISH_IMAGE_SOURCES).length;
+// SESUDAH — dengan error handler dan flag imagesReady:
+let imagesReady = false;
 
-for (let [key, src] of Object.entries(FISH_IMAGE_SOURCES)) {
-  const img = new Image();
-  img.src = src;
-  img.onload = () => { imagesLoaded++; };
-  FISH_IMAGES[key] = img;
-}
+Promise.all(
+  Object.entries(FISH_IMAGE_SOURCES).map(([key, src]) =>
+    new Promise(resolve => {
+      const img = new Image();
+      img.onload  = () => { FISH_IMAGES[key] = img; resolve(); };
+      img.onerror = () => {
+        console.warn('Gagal load gambar:', src);
+        FISH_IMAGES[key] = null;
+        resolve();
+      };
+      img.src = src;
+    })
+  )
+).then(() => {
+  imagesReady = true;
+  console.log('Gambar siap:', Object.keys(FISH_IMAGES).filter(k => FISH_IMAGES[k]));
+});
 
 // --- FISH DEFINITIONS ---
 const FISH_TYPES = [
@@ -709,7 +720,7 @@ for(let f of fishes) {
   
   if(f.type.glow) { ctx.shadowColor = f.type.color; ctx.shadowBlur = 12; }
   
-  if(img && img.complete && img.naturalWidth > 0) {
+ if(imagesReady && img) {
     ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
   } else {
     ctx.font = `${f.type.size*SCALE}px Arial`;

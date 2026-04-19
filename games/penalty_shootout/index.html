@@ -300,6 +300,7 @@ function resetKeeper() {
   keeper.diving = false;
   keeper.diveDir = 0;
   keeper.diveProgress = 0;
+  keeper.diveStarted = false; 
   keeper.readBall = false;
   keeper.readDelay = 0;
 
@@ -1650,8 +1651,10 @@ canvas.addEventListener('mouseup', (e) => {
   if (!swipeActive) return;
   swipeActive = false;
 
-  if (gameState === STATES.SHOOTING && !ball.active && touchStart && touchCurrent) {
-    fireShot(touchStart.x, touchStart.y, touchCurrent.x, touchCurrent.y);
+  if (gameState === STATES.SHOOTING && !ball.active && touchStart) {
+    const ex = touchCurrent ? touchCurrent.x : touchStart.x;
+    const ey = touchCurrent ? touchCurrent.y : touchStart.y - 50; // default shoot up
+    fireShot(touchStart.x, touchStart.y, ex, ey);
   } else if (gameState === STATES.GOALKEEPING && !ball.active && touchStart && touchCurrent) {
     const dx = touchCurrent.x - touchStart.x;
     if (Math.abs(dx) > 30) playerDive(dx > 0 ? 1 : -1);
@@ -1692,8 +1695,8 @@ function drawSwipePreview() {
   ctx.fill();
 
   // Power indicator
-  const dist = dist(swipePath[0].x, swipePath[0].y, last.x, last.y);
-  const power = clamp(dist / (H * 0.5), 0.3, 1.0);
+  const swipeDist = Math.hypot(last.x - swipePath[0].x, last.y - swipePath[0].y);
+  const power = clamp(swipeDist / (H * 0.5), 0.3, 1.0);
   const powerColor = power < 0.5 ? '#00FF88' : power < 0.8 ? '#FFD700' : '#FF4444';
 
   ctx.fillStyle = powerColor;
@@ -1728,6 +1731,8 @@ function gameLoop(timestamp) {
 
 resize();
 window.addEventListener('resize', resize);
+goal.x = W / 2;
+goal.y = H * 0.32; 
 requestAnimationFrame(gameLoop);
 
 // Polyfill for roundRect

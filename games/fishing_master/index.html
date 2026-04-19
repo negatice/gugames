@@ -88,17 +88,39 @@ let resultAnim = { progress: 0, revealed: 0, fishIndex: 0, particles: [] };
 let menuParticles = [];
 let buttonHover = { level: -1, start: false };
 
+// Preload semua gambar ikan
+const FISH_IMAGES = {};
+const FISH_IMAGE_SOURCES = {
+  'ikan-normal1':   'assets/images/fish/normal_fish.png',
+  'ikan-normal2':  'assets/images/fish/normal_fish_2.png',
+  'ikan-dori':   'assets/images/fish/dory_fish.png',
+  'ikan-buntal': 'assets/images/fish/puffer_fish.png',
+  'ikan-nemo':   'assets/images/fish/clown-fish.png',
+  'hiu':    'assets/images/fish/shark.png',
+  'paus':   'assets/images/fish/aquatic.png',
+  'tuna':   'assets/images/fish/tuna.png',
+};
+
+let imagesLoaded = 0;
+const totalImages = Object.keys(FISH_IMAGE_SOURCES).length;
+
+for (let [key, src] of Object.entries(FISH_IMAGE_SOURCES)) {
+  const img = new Image();
+  img.src = src;
+  img.onload = () => { imagesLoaded++; };
+  FISH_IMAGES[key] = img;
+}
+
 // --- FISH DEFINITIONS ---
 const FISH_TYPES = [
-  // hp rendah, res rendah → mudah ditangkap
-  { name:'Ikan Teri',  emoji:'🐟', weight:50,   size:14, res:0.3, hp:8,   speed:40, pattern:'straight', minD:0,   color:'#B3E5FC' },
-  { name:'Ikan Kecil', emoji:'🐠', weight:100,  size:18, res:0.5, hp:14,  speed:55, pattern:'zigzag',   minD:10,  color:'#4FC3F7' },
-  { name:'Ikan Pari',  emoji:'🦑', weight:250,  size:22, res:0.8, hp:22,  speed:45, pattern:'circle',   minD:40,  color:'#9C27B0' },
-  { name:'Ikan Buntal',emoji:'🐡', weight:500,  size:26, res:1.0, hp:30,  speed:35, pattern:'straight', minD:80,  color:'#FF9800' },
-  { name:'Ikan Tuna',  emoji:'🐟', weight:1000, size:28, res:1.3, hp:40,  speed:70, pattern:'erratic',  minD:130, color:'#2196F3' },
-  { name:'Hiu Kecil',  emoji:'🦈', weight:2000, size:34, res:1.7, hp:55,  speed:60, pattern:'zigzag',   minD:180, color:'#607D8B' },
-  { name:'Paus Biru',  emoji:'🐋', weight:5000, size:42, res:2.2, hp:75,  speed:25, pattern:'straight', minD:260, color:'#1565C0' },
-  { name:'Ikan Emas',  emoji:'✨', weight:3000, size:20, res:1.5, hp:50,  speed:80, pattern:'erratic',  minD:300, color:'#FFD700', glow:true },
+  { name:'Ikan Normal',  imgKey:'ikan-normal1', emoji:'🐟', weight:50,   size:14, res:0.3, hp:8,  speed:40, pattern:'straight', minD:0,   color:'#B3E5FC' },
+  { name:'Ikan Kecil',   imgKey:'ikan-normal2', emoji:'🐠', weight:100,  size:18, res:0.5, hp:14, speed:55, pattern:'zigzag',   minD:10,  color:'#4FC3F7' },
+  { name:'Ikan Dori',    imgKey:'ikan-dori',    emoji:'🐟', weight:250,  size:22, res:0.8, hp:22, speed:45, pattern:'circle',   minD:40,  color:'#9C27B0' },
+  { name:'Ikan Buntal',  imgKey:'ikan-buntal',  emoji:'🐡', weight:500,  size:26, res:1.0, hp:30, speed:35, pattern:'straight', minD:80,  color:'#FF9800' },
+  { name:'Ikan Nemo',    imgKey:'ikan-nemo',    emoji:'🐠', weight:1000, size:28, res:1.3, hp:40, speed:70, pattern:'erratic',  minD:130, color:'#FF5722' },
+  { name:'Hiu',          imgKey:'hiu',          emoji:'🦈', weight:2000, size:34, res:1.7, hp:55, speed:60, pattern:'zigzag',   minD:180, color:'#607D8B' },
+  { name:'Paus',         imgKey:'paus',         emoji:'🐋', weight:5000, size:42, res:2.2, hp:75, speed:25, pattern:'straight', minD:260, color:'#1565C0' },
+  { name:'Ikan Tuna',    imgKey:'tuna',         emoji:'🐟', weight:3000, size:32, res:1.5, hp:50, speed:80, pattern:'erratic',  minD:300, color:'#FFD700', glow:true },
 ];
 const OBSTACLE_TYPES = [
   { name: 'Sampah', emoji: '🗑️', effect: 'fail' },
@@ -1027,7 +1049,7 @@ function renderResult() {
   const btnX = (W - btnW)/2;
 
   drawButton(btnX, btnY, btnW, btnH, '🔄 MAIN LAGI', currentLevel.color, darkenColor(currentLevel.color, 0.3));
-  drawButton(btnX, btnY + 60*SCALE, btnW, btnH, '🏠 MENU', '#607D8B', '#37474F');
+  drawButton(btnX, btnY + 60*SCALE, btnW, btnH, 'MENU', '#607D8B', '#37474F');
 }
 
 // --- HELPERS ---

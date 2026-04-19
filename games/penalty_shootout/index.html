@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Penalty Shootout</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: auto;
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+// ============================================================
+// PENALTY SHOOTOUT - HTML5 Canvas Game
+// ============================================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- Audio System ---
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+  ensureAudio();
+  const now = audioCtx.currentTime;
+  const g = audioCtx.createGain();
+  g.connect(audioCtx.destination);
+  if (type === 'kick') {
+    const o = audioCtx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, now);
+    o.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+    g.gain.setValueAtTime(0.6, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    o.connect(g);
+    o.start(now);
+    o.stop(now + 0.2);
+  } else if (type === 'net') {
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.3, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.08));
+    const s = audioCtx.createBufferSource();
+    s.buffer = buf;
+    g.gain.setValueAtTime(0.3, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    s.connect(g);
+    s.start(now);
+  } else if (type === 'save') {
+    const o = audioCtx.createOscillator();
+    o.type = 'square';
+    o.frequency.setValueAtTime(300, now);
+    o.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+    g.gain.setValueAtTime(0.4, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    o.connect(g);
+    o.start(now);
+    o.stop(now + 0.35);
+  } else if (type === 'goal') {
+    [523, 659, 784].forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      const g2 = audioCtx.createGain();
+      g2.connect(audioCtx.destination);
+      g2.gain.setValueAtTime(0, now + i * 0.12);
+      g2.gain.linearRampToValueAtTime(0.3, now + i * 0.12 + 0.05);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.5);
+      o.connect(g2);
+      o.start(now + i * 0.12);
+      o.stop(now + i * 0.12 + 0.5);
+    });
+  } else if (type === 'miss') {
+    const o = audioCtx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(200, now);
+    o.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+    g.gain.setValueAtTime(0.3, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    o.connect(g);
+    o.start(now);
+    o.stop(now + 0.5);
+  } else if (type === 'whistle') {
+    const o = audioCtx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(800, now);
+    o.frequency.setValueAtTime(900, now + 0.1);
+    o.frequency.setValueAtTime(800, now + 0.2);
+    g.gain.setValueAtTime(0.5, now);
+    g.gain.setValueAtTime(0.5, now + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    o.connect(g);
+    o.start(now);
+    o.stop(now + 0.6);
+  } else if (type === 'crowd') {
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 1.5, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.3 * (Math.sin(i / (audioCtx.sampleRate * 0.5) * Math.PI * 2) * 0.5 + 0.5);
+    const s = audioCtx.createBufferSource();
+    s.buffer = buf;
+    const f = audioCtx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 600;
+    f.Q.value = 0.5;
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    s.connect(f);
+    f.connect(g);
+    s.start(now);
+  }
+}
+
+// --- Vibration ---
+function vibrate(ms) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+
+// --- Responsive Canvas ---
+let W, H, scale;
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  scale = Math.min(W, H) / 400;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Game States ---
+const STATES = {
+  MENU: 'menu',
+  SHOOTING: 'shooting',
+  SHOOT_RESULT: 'shoot_result',
+  GOALKEEPING: 'goalkeeping',
+  SAVE_RESULT: 'save_result',
+  GAME_OVER: 'game_over'
+};
+
+// --- Game Config ---
+const ROUNDS = 5;
+const GOAL_WIDTH = 220;
+const GOAL_HEIGHT = 100;
+const BALL_RADIUS = 12;
+
+// --- Game Data ---
+let gameState = STATES.MENU;
+let difficulty = 1; // 0=easy, 1=normal, 2=hard
+let playerScore = 0;
+let aiScore = 0;
+let currentRound = 0;
+let isPlayerTurn = true; // true=player shoots, false=player keeps
+let playerShotResults = [];
+let aiShotResults = [];
+let comboCount = 0;
+let highScore = parseInt(localStorage.getItem('penaltyHS') || '0');
+
+// --- Ball ---
+let ball = {
+  x: 0, y: 0, z: 0, // z = distance from camera
+  vx: 0, vy: 0, vz: 0,
+  radius: BALL_RADIUS,
+  spin: 0,
+  rotation: 0,
+  active: false,
+  trail: []
+};
+
+// --- Goalkeeper ---
+let keeper = {
+  x: 0, y: 0, // position relative to goal center
+  targetX: 0, targetY: 0,
+  width: 50, height: 80,
+  diving: false,
+  diveDir: 0, // -1 left, 0 center, 1 right
+  diveProgress: 0,
+  diveSpeed: 0,
+  reactionDelay: 0,
+  readBall: false,
+  readDelay: 0
+};
+
+// --- Goal ---
+let goal = {
+  x: 0, y: 0,
+  w: GOAL_WIDTH, h: GOAL_HEIGHT,
+  postWidth: 6,
+  netAnim: [],
+  netHit: false,
+  netTimer: 0
+};
+
+// --- Particles ---
+let particles = [];
+let screenShake = { x: 0, y: 0, intensity: 0 };
+let flashAlpha = 0;
+
+// --- Touch ---
+let touchStart = null;
+let touchCurrent = null;
+let swipeActive = false;
+let swipePath = [];
+let powerMeter = 0;
+let powerDir = 1;
+
+// --- AI Pattern Memory ---
+let aiMemory = { left: 0, center: 0, right: 0, total: 0 };
+
+// --- Timing ---
+let resultTimer = 0;
+let roundTimer = 0;
+let stateTransition = false;
+
+// --- Stadium ---
+let crowdPhase = 0;
+let nightMode = false;
+let rainDrops = [];
+let hasRain = false;
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function dist(x1, y1, x2, y2) { return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); }
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+
+// ============================================================
+// INIT / RESET
+// ============================================================
+
+function initGame() {
+  playerScore = 0;
+  aiScore = 0;
+  currentRound = 0;
+  isPlayerTurn = true;
+  playerShotResults = [];
+  aiShotResults = [];
+  comboCount = 0;
+  aiMemory = { left: 0, center: 0, right: 0, total: 0 };
+  hasRain = Math.random() < 0.2;
+  rainDrops = [];
+  for (let i = 0; i < 80; i++) {
+    rainDrops.push({ x: rand(0, W), y: rand(0, H), speed: rand(8, 15), len: rand(10, 25) });
+  }
+  resetBall();
+  resetKeeper();
+  startRound();
+}
+
+function resetBall() {
+  ball.x = W / 2;
+  ball.y = H * 0.78;
+  ball.z = 0;
+  ball.vx = 0;
+  ball.vy = 0;
+  ball.vz = 0;
+  ball.spin = 0;
+  ball.rotation = 0;
+  ball.active = false;
+  ball.trail = [];
+}
+
+function resetKeeper() {
+  keeper.x = W / 2;
+  keeper.y = goal.y + goal.h * 0.5;
+  keeper.targetX = W / 2;
+  keeper.targetY = goal.y + goal.h * 0.5;
+  keeper.diving = false;
+  keeper.diveDir = 0;
+  keeper.diveProgress = 0;
+  keeper.readBall = false;
+  keeper.readDelay = 0;
+
+  // Difficulty-based reaction
+  const delays = [400, 250, 120];
+  const speeds = [0.015, 0.025, 0.04];
+  keeper.reactionDelay = delays[difficulty];
+  keeper.diveSpeed = speeds[difficulty];
+}
+
+function startRound() {
+  resetBall();
+  resetKeeper();
+  goal.netHit = false;
+  goal.netTimer = 0;
+  goal.netAnim = [];
+  particles = [];
+  screenShake = { x: 0, y: 0, intensity: 0 };
+  flashAlpha = 0;
+  resultTimer = 0;
+
+  if (currentRound >= ROUNDS) {
+    gameState = STATES.GAME_OVER;
+    return;
+  }
+
+  if (isPlayerTurn) {
+    gameState = STATES.SHOOTING;
+  } else {
+    gameState = STATES.GOALKEEPING;
+    // AI decides shot direction
+    aiDecideShot();
+  }
+}
+
+function aiDecideShot() {
+  // AI shot decision
+  const dirs = [-1, 0, 1]; // left, center, right
+  const zones = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'];
+
+  // Slight bias away from where player usually dives
+  const shotDir = dirs[randInt(0, 2)];
+  const zone = zones[randInt(0, 4)];
+
+  ball.shotDir = shotDir;
+  ball.shotZone = zone;
+  ball.power = rand(0.6, 1.0);
+}
+
+// ============================================================
+// SHOOTING LOGIC
+// ============================================================
+
+function fireShot(startX, startY, endX, endY) {
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const distSwipe = Math.sqrt(dx * dx + dy * dy);
+  if (distSwipe < 20) return; // too short
+
+  playSound('kick');
+  vibrate(30);
+
+  const angle = Math.atan2(dy, dx);
+  const power = clamp(distSwipe / (H * 0.5), 0.3, 1.0);
+
+  // Calculate target position on goal plane
+  const goalTargetX = W / 2 + Math.cos(angle) * GOAL_WIDTH * 0.6 * power;
+  const goalTargetY = goal.y + goal.h * 0.2 + Math.abs(Math.sin(angle)) * GOAL_HEIGHT * 0.3 * (dy < 0 ? 1 : -0.5);
+
+  ball.x = W / 2;
+  ball.y = H * 0.78;
+  ball.z = 0;
+
+  const framesToGoal = 40 - power * 15; // more power = fewer frames
+
+  ball.vx = (goalTargetX - ball.x) / framesToGoal;
+  ball.vy = (goalTargetY - ball.y) / framesToGoal;
+  ball.vz = 1;
+  ball.spin = dx * 0.001; // curve from horizontal swipe component
+  ball.power = power;
+  ball.active = true;
+  ball.targetX = goalTargetX;
+  ball.targetY = goalTargetY;
+  ball.trail = [];
+  ball.flightFrames = framesToGoal;
+  ball.currentFrame = 0;
+
+  // Record player pattern
+  const dir = goalTargetX < W / 2 - 30 ? -1 : goalTargetX > W / 2 + 30 ? 1 : 0;
+  aiMemory[dir === -1 ? 'left' : dir === 1 ? 'right' : 'center']++;
+  aiMemory.total++;
+
+  // Keeper reaction (with delay)
+  keeper.diveDir = dir;
+  keeper.diving = true;
+  keeper.diveProgress = 0;
+
+  // In higher difficulties, keeper can read better
+  if (difficulty >= 1 && Math.random() < 0.3 + difficulty * 0.15) {
+    keeper.readDelay = rand(5, 15);
+    keeper.readBall = true;
+  } else {
+    keeper.readDelay = rand(15, 30);
+    keeper.readBall = false;
+  }
+}
+
+// ============================================================
+// GOALKEEPING LOGIC (Player as keeper)
+// ============================================================
+
+function playerDive(dir) {
+  playSound('kick');
+  vibrate(30);
+
+  // Player dive
+  keeper.diveDir = dir;
+  keeper.diving = true;
+  keeper.diveProgress = 0;
+  keeper.diveSpeed = 0.04; // player controlled dive speed
+
+  // Simulate AI shot
+  simulateAIShot();
+}
+
+function simulateAIShot() {
+  const dirs = [-1, 0, 1];
+
+  // AI reads player pattern
+  let aiDir;
+  if (aiMemory.total > 2 && difficulty >= 1) {
+    // AI biases toward player's common direction
+    const weights = [aiMemory.left, aiMemory.center, aiMemory.right];
+    const total = weights.reduce((a, b) => a + b, 0);
+    const probs = weights.map(w => (w + 1) / (total + 3));
+    const r = Math.random();
+    let cum = 0;
+    aiDir = 1; // default right
+    for (let i = 0; i < 3; i++) {
+      cum += probs[i];
+      if (r < cum) { aiDir = dirs[i]; break; }
+    }
+  } else {
+    aiDir = dirs[randInt(0, 2)];
+  }
+
+  const zones = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'];
+  const zone = zones[randInt(0, 4)];
+
+  const power = rand(0.6, 1.0);
+  const goalTargetX = W / 2 + aiDir * GOAL_WIDTH * 0.3 * power;
+  const goalTargetY = goal.y + goal.h * 0.3 + rand(-20, 20);
+
+  ball.x = W / 2;
+  ball.y = H * 0.78;
+  ball.z = 0;
+
+  const framesToGoal = 40 - power * 15;
+  ball.vx = (goalTargetX - ball.x) / framesToGoal;
+  ball.vy = (goalTargetY - ball.y) / framesToGoal;
+  ball.vz = 1;
+  ball.spin = 0;
+  ball.power = power;
+  ball.active = true;
+  ball.targetX = goalTargetX;
+  ball.targetY = goalTargetY;
+  ball.trail = [];
+  ball.flightFrames = framesToGoal;
+  ball.currentFrame = 0;
+  ball.aiShotDir = aiDir;
+}
+
+// ============================================================
+// UPDATE LOOP
+// ============================================================
+
+function update() {
+  crowdPhase += 0.02;
+
+  // Rain
+  if (hasRain) {
+    for (let r of rainDrops) {
+      r.y += r.speed;
+      r.x -= 1;
+      if (r.y > H) { r.y = -r.len; r.x = rand(0, W); }
+      if (r.x < 0) r.x = W;
+    }
+  }
+
+  // Screen shake decay
+  if (screenShake.intensity > 0) {
+    screenShake.x = (Math.random() - 0.5) * screenShake.intensity;
+    screenShake.y = (Math.random() - 0.5) * screenShake.intensity;
+    screenShake.intensity *= 0.9;
+    if (screenShake.intensity < 0.1) screenShake.intensity = 0;
+  }
+
+  // Flash decay
+  if (flashAlpha > 0) flashAlpha *= 0.92;
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity || 0;
+    p.life -= p.decay;
+    p.alpha = p.life / p.maxLife;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Goal net animation
+  if (goal.netHit) {
+    goal.netTimer++;
+    if (goal.netTimer > 60) {
+      goal.netHit = false;
+      goal.netTimer = 0;
+    }
+  }
+
+  // Ball physics
+  if (ball.active) {
+    ball.currentFrame++;
+
+    // Apply curve (spin)
+    ball.vx += ball.spin * 0.05;
+
+    // Apply gravity effect (slight downward curve)
+    ball.vy += 0.02 * ball.power;
+
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+    ball.z += ball.vz;
+    ball.rotation += ball.power * 0.3;
+
+    // Scale ball based on z (perspective)
+    const perspectiveScale = 1 - ball.z * 0.4;
+    ball.displayRadius = ball.radius * perspectiveScale;
+
+    // Trail
+    ball.trail.push({ x: ball.x, y: ball.y, alpha: 1, radius: ball.displayRadius * 0.7 });
+    if (ball.trail.length > 15) ball.trail.shift();
+    for (let t of ball.trail) t.alpha *= 0.85;
+
+    // Keeper AI reaction delay
+    if (keeper.readDelay > 0) {
+      keeper.readDelay--;
+    } else if (keeper.diving && !keeper.diveStarted) {
+      keeper.diveStarted = true;
+    }
+
+    // Update keeper dive
+    if (keeper.diving) {
+      if (keeper.diveStarted) {
+        keeper.diveProgress += keeper.diveSpeed;
+        keeper.diveProgress = Math.min(keeper.diveProgress, 1);
+
+        const diveTargetX = W / 2 + keeper.diveDir * GOAL_WIDTH * 0.35;
+        const diveTargetY = goal.y + goal.h * 0.5;
+        keeper.x = lerp(W / 2, diveTargetX, keeper.diveProgress);
+        keeper.y = lerp(goal.y + goal.h * 0.5, diveTargetY, keeper.diveProgress);
+      }
+    }
+
+    // Check if ball reached goal line
+    if (ball.currentFrame >= ball.flightFrames) {
+      ball.active = false;
+      checkShotResult();
+    }
+  }
+
+  // Result timer
+  if (gameState === STATES.SHOOT_RESULT || gameState === STATES.SAVE_RESULT) {
+    resultTimer++;
+    if (resultTimer > 120) {
+      // Switch turn
+      if (isPlayerTurn) {
+        // Player finished shooting, now AI shoots
+        isPlayerTurn = false;
+      } else {
+        currentRound++;
+        isPlayerTurn = true;
+      }
+      startRound();
+    }
+  }
+}
+
+// ============================================================
+// SHOT RESULT CHECK
+// ============================================================
+
+function checkShotResult() {
+  const bx = ball.x;
+  const by = ball.y;
+
+  // Check if ball is within goal bounds
+  const inGoal = bx > goal.x - goal.w / 2 + goal.postWidth &&
+                 bx < goal.x + goal.w / 2 - goal.postWidth &&
+                 by > goal.y &&
+                 by < goal.y + goal.h;
+
+  // Check if keeper saves it
+  const keeperLeft = keeper.x - keeper.width / 2;
+  const keeperRight = keeper.x + keeper.width / 2;
+  const keeperTop = keeper.y - keeper.height / 2;
+  const keeperBottom = keeper.y + keeper.height / 2;
+
+  const hitKeeper = bx > keeperLeft - 15 && bx < keeperRight + 15 &&
+                    by > keeperTop - 10 && by < keeperBottom + 10;
+
+  let result;
+  if (!inGoal) {
+    result = 'miss';
+  } else if (hitKeeper) {
+    result = 'saved';
+  } else {
+    result = 'goal';
+  }
+
+  // Apply result
+  if (result === 'goal') {
+    if (isPlayerTurn) {
+      playerScore++;
+      comboCount++;
+      playSound('goal');
+      playSound('crowd');
+      vibrate([50, 30, 50]);
+      screenShake.intensity = 8;
+      flashAlpha = 0.3;
+      spawnGoalParticles();
+    } else {
+      aiScore++;
+      comboCount = 0;
+      playSound('goal');
+      vibrate([50, 30, 50]);
+      screenShake.intensity = 5;
+    }
+  } else if (result === 'saved') {
+    if (isPlayerTurn) {
+      comboCount = 0;
+      playSound('save');
+      vibrate([100, 50, 100]);
+      screenShake.intensity = 6;
+    } else {
+      // Player saved!
+      playSound('save');
+      playSound('crowd');
+      vibrate([100, 50, 100]);
+      screenShake.intensity = 8;
+      flashAlpha = 0.2;
+      spawnSaveParticles();
+    }
+  } else {
+    if (isPlayerTurn) {
+      comboCount = 0;
+      playSound('miss');
+      vibrate(200);
+    } else {
+      comboCount = 0;
+      playSound('miss');
+    }
+  }
+
+  // Record result
+  if (isPlayerTurn) {
+    playerShotResults.push(result);
+  } else {
+    aiShotResults.push(result);
+  }
+
+  // Trigger net animation if goal
+  if (result === 'goal') {
+    goal.netHit = true;
+    goal.netTimer = 0;
+    ball.targetX = bx;
+    ball.targetY = by;
+  }
+
+  // Set game state
+  if (isPlayerTurn) {
+    gameState = STATES.SHOOT_RESULT;
+  } else {
+    gameState = STATES.SAVE_RESULT;
+  }
+  resultTimer = 0;
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+
+function spawnGoalParticles() {
+  for (let i = 0; i < 30; i++) {
+    particles.push({
+      x: W / 2 + rand(-30, 30),
+      y: goal.y + rand(0, goal.h),
+      vx: rand(-4, 4),
+      vy: rand(-6, -1),
+      gravity: 0.15,
+      life: rand(30, 60),
+      maxLife: 60,
+      decay: 0.016,
+      color: ['#FFD700', '#FF6B35', '#FFFFFF', '#00FF88'][randInt(0, 3)],
+      size: rand(3, 8)
+    });
+  }
+}
+
+function spawnSaveParticles() {
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x: keeper.x + rand(-20, 20),
+      y: keeper.y + rand(-20, 20),
+      vx: rand(-5, 5),
+      vy: rand(-5, 5),
+      gravity: 0.1,
+      life: rand(20, 40),
+      maxLife: 40,
+      decay: 0.025,
+      color: ['#00BFFF', '#FFFFFF', '#87CEEB'][randInt(0, 2)],
+      size: rand(2, 6)
+    });
+  }
+}
+
+function spawnMissParticles() {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x: ball.x + rand(-10, 10),
+      y: ball.y + rand(-10, 10),
+      vx: rand(-2, 2),
+      vy: rand(-3, 3),
+      gravity: 0.05,
+      life: rand(15, 30),
+      maxLife: 30,
+      decay: 0.033,
+      color: ['#FF4444', '#FF8888'][randInt(0, 1)],
+      size: rand(2, 5)
+    });
+  }
+}
+
+// ============================================================
+// DRAWING FUNCTIONS
+// ============================================================
+
+function draw() {
+  ctx.save();
+  ctx.translate(screenShake.x, screenShake.y);
+
+  // Background
+  drawBackground();
+
+  // Goal
+  drawGoal();
+
+  // Net animation
+  if (goal.netHit) drawNetAnimation();
+
+  // Particles (behind ball)
+  drawParticles();
+
+  // Ball trail
+  if (ball.active || ball.trail.length > 0) {
+    for (let t of ball.trail) {
+      ctx.globalAlpha = t.alpha * 0.3;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Ball
+  if (ball.active || gameState === STATES.SHOOTING || gameState === STATES.GOALKEEPING) {
+    drawBall();
+  }
+
+  // Goalkeeper
+  drawGoalkeeper();
+
+  // Particles (in front)
+  drawParticles();
+
+  // Flash
+  if (flashAlpha > 0.01) {
+    ctx.globalAlpha = flashAlpha;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(-10, -10, W + 20, H + 20);
+    ctx.globalAlpha = 1;
+  }
+
+  // UI
+  drawUI();
+
+  ctx.restore();
+}
+
+function drawBackground() {
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  if (nightMode || hasRain) {
+    skyGrad.addColorStop(0, '#0a1628');
+    skyGrad.addColorStop(0.4, '#1a2a4a');
+    skyGrad.addColorStop(1, '#0d1f0d');
+  } else {
+    skyGrad.addColorStop(0, '#1a3a5c');
+    skyGrad.addColorStop(0.4, '#2a5a7c');
+    skyGrad.addColorStop(1, '#1a4a1a');
+  }
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stadium lights
+  const lightY = H * 0.08;
+  for (let i = 0; i < 4; i++) {
+    const lx = W * 0.15 + i * W * 0.23;
+    ctx.fillStyle = 'rgba(255,255,200,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(lx - 5, lightY);
+    ctx.lineTo(lx - 40, H * 0.5);
+    ctx.lineTo(lx + 40, H * 0.5);
+    ctx.lineTo(lx + 5, lightY);
+    ctx.fill();
+
+    ctx.fillStyle = '#FFFFAA';
+    ctx.beginPath();
+    ctx.arc(lx, lightY, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Crowd (blurred rows)
+  for (let row = 0; row < 5; row++) {
+    const rowY = H * 0.12 + row * 18;
+    const crowdAlpha = 0.3 + row * 0.05;
+    for (let i = 0; i < 40; i++) {
+      const cx = i * (W / 40) + Math.sin(crowdPhase + i * 0.5 + row) * 2;
+      const cy = rowY + Math.sin(crowdPhase * 1.5 + i * 0.3) * 1;
+      ctx.fillStyle = `rgba(${180 + randInt(-20,20)}, ${180 + randInt(-20,20)}, ${180 + randInt(-20,20)}, ${crowdAlpha})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Field
+  const fieldGrad = ctx.createLinearGradient(0, H * 0.4, 0, H);
+  fieldGrad.addColorStop(0, '#2d8a2d');
+  fieldGrad.addColorStop(0.5, '#257a25');
+  fieldGrad.addColorStop(1, '#1d6a1d');
+  ctx.fillStyle = fieldGrad;
+  ctx.fillRect(0, H * 0.35, W, H * 0.65);
+
+  // Field stripes
+  for (let i = 0; i < 8; i++) {
+    if (i % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fillRect(0, H * 0.35 + i * H * 0.08, W, H * 0.08);
+    }
+  }
+
+  // Penalty spot
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath();
+  ctx.arc(W / 2, H * 0.78, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Penalty box lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 2;
+  const boxTop = H * 0.35;
+  const boxBottom = H * 0.85;
+  const boxLeft = W / 2 - GOAL_WIDTH * 0.8;
+  const boxRight = W / 2 + GOAL_WIDTH * 0.8;
+  ctx.beginPath();
+  ctx.moveTo(boxLeft, boxTop);
+  ctx.lineTo(boxLeft, boxBottom);
+  ctx.moveTo(boxRight, boxTop);
+  ctx.lineTo(boxRight, boxBottom);
+  ctx.stroke();
+
+  // Rain
+  if (hasRain) {
+    ctx.strokeStyle = 'rgba(180,200,255,0.3)';
+    ctx.lineWidth = 1;
+    for (let r of rainDrops) {
+      ctx.beginPath();
+      ctx.moveTo(r.x, r.y);
+      ctx.lineTo(r.x - 2, r.y + r.len);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawGoal() {
+  goal.x = W / 2;
+  goal.y = H * 0.32;
+
+  // Goal back (net depth)
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(goal.x - goal.w / 2, goal.y, goal.w, goal.h);
+
+  // Net pattern
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  const netSize = 12;
+  for (let x = goal.x - goal.w / 2; x <= goal.x + goal.w / 2; x += netSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, goal.y);
+    ctx.lineTo(x, goal.y + goal.h);
+    ctx.stroke();
+  }
+  for (let y = goal.y; y <= goal.y + goal.h; y += netSize) {
+    ctx.beginPath();
+    ctx.moveTo(goal.x - goal.w / 2, y);
+    ctx.lineTo(goal.x + goal.w / 2, y);
+    ctx.stroke();
+  }
+
+  // Goal posts
+  ctx.fillStyle = '#FFFFFF';
+  // Left post
+  ctx.fillRect(goal.x - goal.w / 2 - goal.postWidth / 2, goal.y - 3, goal.postWidth, goal.h + 3);
+  // Right post
+  ctx.fillRect(goal.x + goal.w / 2 - goal.postWidth / 2, goal.y - 3, goal.postWidth, goal.h + 3);
+  // Crossbar
+  ctx.fillRect(goal.x - goal.w / 2 - goal.postWidth / 2, goal.y - goal.postWidth, goal.w + goal.postWidth, goal.postWidth);
+
+  // Target zones (during shooting)
+  if (gameState === STATES.SHOOTING && !ball.active) {
+    drawTargetZones();
+  }
+}
+
+function drawTargetZones() {
+  const zones = [
+    { x: goal.x - goal.w / 3, y: goal.y + goal.h * 0.2, label: '2x', points: 2 },
+    { x: goal.x + goal.w / 3, y: goal.y + goal.h * 0.2, label: '2x', points: 2 },
+    { x: goal.x - goal.w / 4, y: goal.y + goal.h * 0.75, label: '1x', points: 1 },
+    { x: goal.x + goal.w / 4, y: goal.y + goal.h * 0.75, label: '1x', points: 1 },
+    { x: goal.x, y: goal.y + goal.h * 0.5, label: '', points: 1 },
+  ];
+
+  ctx.globalAlpha = 0.15;
+  for (let z of zones) {
+    ctx.fillStyle = z.points >= 2 ? '#FFD700' : '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(z.x, z.y, 15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `${10 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText('2x', goal.x - goal.w / 3, goal.y + goal.h * 0.2 + 4);
+  ctx.fillText('2x', goal.x + goal.w / 3, goal.y + goal.h * 0.2 + 4);
+  ctx.globalAlpha = 1;
+}
+
+function drawNetAnimation() {
+  const progress = goal.netTimer / 60;
+  const bulge = Math.sin(progress * Math.PI) * 20;
+
+  ctx.fillStyle = `rgba(255,255,255,${0.2 * (1 - progress)})`;
+  ctx.beginPath();
+  const bx = ball.targetX || goal.x;
+  const by = ball.targetY || goal.y + goal.h / 2;
+  ctx.ellipse(bx, by, 30 + bulge, 20 + bulge * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBall() {
+  const bx = ball.x;
+  const by = ball.y;
+  const br = ball.displayRadius || ball.radius;
+
+  // Ball shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(bx + 3, by + br + 2, br * 0.8, br * 0.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ball body
+  const ballGrad = ctx.createRadialGradient(bx - br * 0.3, by - br * 0.3, 0, bx, by, br);
+  ballGrad.addColorStop(0, '#FFFFFF');
+  ballGrad.addColorStop(0.7, '#E8E8E8');
+  ballGrad.addColorStop(1, '#CCCCCC');
+  ctx.fillStyle = ballGrad;
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ball pattern (pentagons)
+  ctx.fillStyle = '#333';
+  ctx.save();
+  ctx.translate(bx, by);
+  ctx.rotate(ball.rotation);
+  for (let i = 0; i < 5; i++) {
+    const angle = (i / 5) * Math.PI * 2;
+    const px = Math.cos(angle) * br * 0.5;
+    const py = Math.sin(angle) * br * 0.5;
+    ctx.beginPath();
+    ctx.arc(px, py, br * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Ball outline
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawGoalkeeper() {
+  const kx = keeper.x;
+  const ky = keeper.y;
+  const kw = keeper.width;
+  const kh = keeper.height;
+
+  // Keeper shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(kx, ky + kh / 2 + 5, kw * 0.6, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Keeper body
+  const bodyGrad = ctx.createLinearGradient(kx - kw / 2, ky - kh / 2, kx + kw / 2, ky + kh / 2);
+  bodyGrad.addColorStop(0, '#FF6B35');
+  bodyGrad.addColorStop(1, '#E84500');
+  ctx.fillStyle = bodyGrad;
+
+  // Torso
+  ctx.fillRect(kx - kw / 3, ky - kh / 4, kw * 2 / 3, kh * 0.6);
+
+  // Head
+  ctx.fillStyle = '#FFDBB4';
+  ctx.beginPath();
+  ctx.arc(kx, ky - kh / 3, kw * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Arms
+  const armAngle = keeper.diving ? keeper.diveDir * Math.PI * 0.4 * keeper.diveProgress : 0;
+  ctx.strokeStyle = '#FFDBB4';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+
+  // Left arm
+  ctx.beginPath();
+  ctx.moveTo(kx - kw / 3, ky - kh / 6);
+  ctx.lineTo(kx - kw / 2 - 10 + armAngle * 20, ky - kh / 3 - armAngle * 30);
+  ctx.stroke();
+
+  // Right arm
+  ctx.beginPath();
+  ctx.moveTo(kx + kw / 3, ky - kh / 6);
+  ctx.lineTo(kx + kw / 2 + 10 + armAngle * 20, ky - kh / 3 - armAngle * 30);
+  ctx.stroke();
+
+  // Legs
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(kx - kw / 4, ky + kh / 3);
+  ctx.lineTo(kx - kw / 3, ky + kh / 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(kx + kw / 4, ky + kh / 3);
+  ctx.lineTo(kx + kw / 3, ky + kh / 2);
+  ctx.stroke();
+
+  // Gloves
+  ctx.fillStyle = '#00CC44';
+  const gloveSize = 8;
+  ctx.beginPath();
+  ctx.arc(kx - kw / 2 - 10 + armAngle * 20, ky - kh / 3 - armAngle * 30, gloveSize, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(kx + kw / 2 + 10 + armAngle * 20, ky - kh / 3 - armAngle * 30, gloveSize, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Jersey number
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${14 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('1', kx, ky);
+}
+
+function drawParticles() {
+  for (let p of particles) {
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawUI() {
+  // Score bar
+  drawScoreBar();
+
+  // Turn indicator
+  drawTurnIndicator();
+
+  // Swipe indicator (during shooting)
+  if (gameState === STATES.SHOOTING && !ball.active) {
+    drawSwipeGuide();
+  }
+
+  // Dive buttons (during goalkeeping)
+  if (gameState === STATES.GOALKEEPING && !ball.active) {
+    drawDiveButtons();
+  }
+
+  // Result text
+  drawResultText();
+
+  // Menu
+  if (gameState === STATES.MENU) {
+    drawMenu();
+  }
+
+  // Game Over
+  if (gameState === STATES.GAME_OVER) {
+    drawGameOver();
+  }
+}
+
+function drawScoreBar() {
+  if (gameState === STATES.MENU || gameState === STATES.GAME_OVER) return;
+
+  // Background bar
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  const barH = 44;
+  ctx.fillRect(0, 0, W, barH);
+
+  // Player score
+  ctx.fillStyle = '#00AAFF';
+  ctx.font = `bold ${20 * scale}px Arial`;
+  ctx.textAlign = 'left';
+  ctx.fillText(`YOU: ${playerScore}`, 15, 30);
+
+  // Round info
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `${14 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`Round ${Math.min(currentRound + 1, ROUNDS)}/${ROUNDS}`, W / 2, 18);
+
+  // Difficulty
+  const diffNames = ['Easy', 'Normal', 'Hard'];
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `${10 * scale}px Arial`;
+  ctx.fillText(diffNames[difficulty], W / 2, 35);
+
+  // AI score
+  ctx.fillStyle = '#FF4444';
+  ctx.font = `bold ${20 * scale}px Arial`;
+  ctx.textAlign = 'right';
+  ctx.fillText(`AI: ${aiScore}`, W - 15, 30);
+
+  // Progress dots
+  const dotY = barH + 8;
+  for (let i = 0; i < ROUNDS; i++) {
+    const dx = W / 2 + (i - 2) * 22;
+
+    // Player result dot
+    if (playerShotResults[i]) {
+      ctx.fillStyle = playerShotResults[i] === 'goal' ? '#00FF88' : playerShotResults[i] === 'saved' ? '#FF4444' : '#888';
+      ctx.beginPath();
+      ctx.arc(dx - 8, dotY, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // AI result dot
+    if (aiShotResults[i]) {
+      ctx.fillStyle = aiShotResults[i] === 'goal' ? '#FF4444' : aiShotResults[i] === 'saved' ? '#00FF88' : '#888';
+      ctx.beginPath();
+      ctx.arc(dx + 8, dotY, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Empty dots
+    if (!playerShotResults[i]) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(dx - 8, dotY, 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(dx + 8, dotY, 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawTurnIndicator() {
+  if (gameState === STATES.MENU || gameState === STATES.GAME_OVER) return;
+  if (ball.active) return;
+
+  const text = isPlayerTurn ? '⚽ YOUR SHOT' : '🧤 YOUR SAVE';
+  const color = isPlayerTurn ? '#00AAFF' : '#FF6B35';
+
+  ctx.fillStyle = color;
+  ctx.font = `bold ${16 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = 0.8 + Math.sin(crowdPhase * 3) * 0.2;
+  ctx.fillText(text, W / 2, H * 0.55);
+  ctx.globalAlpha = 1;
+}
+
+function drawSwipeGuide() {
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = `${12 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Swipe to shoot!', W / 2, H * 0.88);
+
+  // Arrow hint
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(W / 2, H * 0.82);
+  ctx.lineTo(W / 2, H * 0.5);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawDiveButtons() {
+  const btnY = H * 0.85;
+  const btnW = W * 0.25;
+  const btnH = 50;
+
+  // Left button
+  drawDiveBtn(W * 0.2, btnY, btnW, btnH, '← LEFT', '#00AAFF');
+  // Center button
+  drawDiveBtn(W * 0.5, btnY, btnW, btnH, '● CENTER', '#FFD700');
+  // Right button
+  drawDiveBtn(W * 0.8, btnY, btnW, btnH, 'RIGHT →', '#FF4444');
+}
+
+function drawDiveBtn(x, y, w, h, label, color) {
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  const rx = x - w / 2;
+  const ry = y - h / 2;
+
+  ctx.beginPath();
+  ctx.roundRect(rx, ry, w, h, 10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.font = `bold ${12 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x, y);
+}
+
+function drawResultText() {
+  let text = '';
+  let color = '';
+  let fontSize = 40;
+
+  if (gameState === STATES.SHOOT_RESULT) {
+    const last = playerShotResults[playerShotResults.length - 1];
+    if (last === 'goal') { text = '⚽ GOAL!'; color = '#00FF88'; fontSize = 48; }
+    else if (last === 'saved') { text = '🧤 SAVED!'; color = '#FF4444'; fontSize = 40; }
+    else { text = '✖ MISS!'; color = '#FF8888'; fontSize = 40; }
+  } else if (gameState === STATES.SAVE_RESULT) {
+    const last = aiShotResults[aiShotResults.length - 1];
+    if (last === 'goal') { text = '😰 AI SCORES!'; color = '#FF4444'; fontSize = 40; }
+    else if (last === 'saved') { text = '🙌 GREAT SAVE!'; color = '#00FF88'; fontSize = 44; }
+    else { text = '😄 AI MISSES!'; color = '#FFD700'; fontSize = 40; }
+  }
+
+  if (text) {
+    const alpha = resultTimer < 20 ? resultTimer / 20 : resultTimer > 100 ? (120 - resultTimer) / 20 : 1;
+    ctx.globalAlpha = alpha;
+
+    // Text shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.font = `bold ${fontSize * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, W / 2 + 2, H * 0.45 + 2);
+
+    ctx.fillStyle = color;
+    ctx.fillText(text, W / 2, H * 0.45);
+
+    // Combo text
+    if (comboCount >= 2 && last === 'goal') {
+      ctx.fillStyle = '#FFD700';
+      ctx.font = `bold ${18 * scale}px Arial`;
+      ctx.fillText(`🔥 ${comboCount}x COMBO!`, W / 2, H * 0.45 + 35 * scale);
+    }
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawMenu() {
+  // Overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Title
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold ${36 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText('⚽ PENALTY', W / 2, H * 0.2);
+  ctx.fillText('SHOOTOUT', W / 2, H * 0.27);
+
+  // Subtitle
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `${14 * scale}px Arial`;
+  ctx.fillText('Best of 5 Rounds', W / 2, H * 0.33);
+
+  // High Score
+  if (highScore > 0) {
+    ctx.fillStyle = '#FFD700';
+    ctx.font = `${12 * scale}px Arial`;
+    ctx.fillText(`🏆 High Score: ${highScore}`, W / 2, H * 0.38);
+  }
+
+  // Difficulty buttons
+  const btnW = W * 0.7;
+  const btnH = 45;
+  const btnX = W / 2;
+  const diffs = [
+    { label: '😊 EASY', y: H * 0.45, color: '#00CC44', diff: 0 },
+    { label: '😐 NORMAL', y: H * 0.53, color: '#FFD700', diff: 1 },
+    { label: '😈 HARD', y: H * 0.61, color: '#FF4444', diff: 2 },
+  ];
+
+  for (let d of diffs) {
+    ctx.fillStyle = difficulty === d.diff ? d.color : 'rgba(0,0,0,0.5)';
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(btnX - btnW / 2, d.y - btnH / 2, btnW, btnH, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = difficulty === d.diff ? '#000' : '#FFFFFF';
+    ctx.font = `bold ${16 * scale}px Arial`;
+    ctx.fillText(d.label, btnX, d.y + 2);
+  }
+
+  // Start button
+  const startY = H * 0.73;
+  const startGrad = ctx.createLinearGradient(btnX - btnW / 2, startY - btnH / 2, btnX + btnW / 2, startY + btnH / 2);
+  startGrad.addColorStop(0, '#00AAFF');
+  startGrad.addColorStop(1, '#0066CC');
+  ctx.fillStyle = startGrad;
+  ctx.beginPath();
+  ctx.roundRect(btnX - btnW / 2, startY - btnH / 2, btnW, btnH, 12);
+  ctx.fill();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${20 * scale}px Arial`;
+  ctx.fillText('▶ START', btnX, startY + 2);
+
+  // Instructions
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = `${10 * scale}px Arial`;
+  ctx.fillText('Swipe to shoot • Tap to dive', W / 2, H * 0.85);
+  ctx.fillText('Best of 5 • Corners = 2x points', W / 2, H * 0.88);
+}
+
+function drawGameOver() {
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(0, 0, W, H);
+
+  const won = playerScore > aiScore;
+  const drawn = playerScore === aiScore;
+
+  // Title
+  ctx.fillStyle = won ? '#00FF88' : drawn ? '#FFD700' : '#FF4444';
+  ctx.font = `bold ${32 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText(won ? '🏆 YOU WIN!' : drawn ? '🤝 DRAW!' : '😞 YOU LOSE!', W / 2, H * 0.2);
+
+  // Score
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${48 * scale}px Arial`;
+  ctx.fillText(`${playerScore} - ${aiScore}`, W / 2, H * 0.3);
+
+  ctx.fillStyle = '#00AAFF';
+  ctx.font = `${14 * scale}px Arial`;
+  ctx.fillText('YOU', W / 2 - 50, H * 0.35);
+  ctx.fillStyle = '#FF4444';
+  ctx.fillText('AI', W / 2 + 50, H * 0.35);
+
+  // Stats
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = `${12 * scale}px Arial`;
+  const pGoals = playerShotResults.filter(r => r === 'goal').length;
+  const aGoals = aiShotResults.filter(r => r === 'goal').length;
+  const pSaves = aiShotResults.filter(r => r === 'saved').length;
+  ctx.fillText(`Goals: ${pGoals} | Saves: ${pSaves}`, W / 2, H * 0.42);
+
+  // New high score
+  const totalScore = playerScore * 100 + pSaves * 50;
+  if (totalScore > highScore) {
+    highScore = totalScore;
+    localStorage.setItem('penaltyHS', highScore.toString());
+    ctx.fillStyle = '#FFD700';
+    ctx.font = `bold ${14 * scale}px Arial`;
+    ctx.fillText('🌟 NEW HIGH SCORE! 🌟', W / 2, H * 0.48);
+  }
+
+  // Buttons
+  const btnW = W * 0.6;
+  const btnH = 45;
+  const btnX = W / 2;
+
+  // Retry
+  ctx.fillStyle = '#00AAFF';
+  ctx.beginPath();
+  ctx.roundRect(btnX - btnW / 2, H * 0.58 - btnH / 2, btnW, btnH, 12);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${18 * scale}px Arial`;
+  ctx.fillText('🔄 RETRY', btnX, H * 0.58 + 2);
+
+  // Menu
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(btnX - btnW / 2, H * 0.66 - btnH / 2, btnW, btnH, 12);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${18 * scale}px Arial`;
+  ctx.fillText('📋 MENU', btnX, H * 0.66 + 2);
+
+  // Result detail
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = `${10 * scale}px Arial`;
+  ctx.fillText('Your shots: ' + playerShotResults.map(r => r === 'goal' ? '⚽' : r === 'saved' ? '🧤' : '✖').join(' '), W / 2, H * 0.78);
+  ctx.fillText('AI shots: ' + aiShotResults.map(r => r === 'goal' ? '⚽' : r === 'saved' ? '🧤' : '✖').join(' '), W / 2, H * 0.81);
+}
+
+// ============================================================
+// TOUCH HANDLING
+// ============================================================
+
+let menuButtons = [];
+let gameOverButtons = [];
+let diveButtons = [];
+
+function getButtons() {
+  menuButtons = [];
+  gameOverButtons = [];
+  diveButtons = [];
+
+  const btnW = W * 0.7;
+  const btnH = 45;
+  const btnX = W / 2;
+
+  if (gameState === STATES.MENU) {
+    const diffs = [
+      { label: '😊 EASY', y: H * 0.45, diff: 0 },
+      { label: '😐 NORMAL', y: H * 0.53, diff: 1 },
+      { label: '😈 HARD', y: H * 0.61, diff: 2 },
+    ];
+    for (let d of diffs) {
+      menuButtons.push({ x: btnX - btnW / 2, y: d.y - btnH / 2, w: btnW, h: btnH, action: 'diff', value: d.diff });
+    }
+    menuButtons.push({ x: btnX - btnW / 2, y: H * 0.73 - btnH / 2, w: btnW, h: btnH, action: 'start' });
+  }
+
+  if (gameState === STATES.GAME_OVER) {
+    gameOverButtons.push({ x: btnX - btnW / 2, y: H * 0.58 - btnH / 2, w: btnW, h: btnH, action: 'retry' });
+    gameOverButtons.push({ x: btnX - btnW / 2, y: H * 0.66 - btnH / 2, w: btnW, h: btnH, action: 'menu' });
+  }
+
+  if (gameState === STATES.GOALKEEPING && !ball.active) {
+    diveButtons.push({ x: W * 0.075, y: H * 0.85 - 25, w: W * 0.25, h: 50, dir: -1 });
+    diveButtons.push({ x: W * 0.375, y: H * 0.85 - 25, w: W * 0.25, h: 50, dir: 0 });
+    diveButtons.push({ x: W * 0.675, y: H * 0.85 - 25, w: W * 0.25, h: 50, dir: 1 });
+  }
+}
+
+function isInside(px, py, btn) {
+  return px >= btn.x && px <= btn.x + btn.w && py >= btn.y && py <= btn.y + btn.h;
+}
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  ensureAudio();
+  const touch = e.touches[0];
+  const tx = touch.clientX;
+  const ty = touch.clientY;
+
+  getButtons();
+
+  // Menu buttons
+  if (gameState === STATES.MENU) {
+    for (let btn of menuButtons) {
+      if (isInside(tx, ty, btn)) {
+        if (btn.action === 'diff') {
+          difficulty = btn.value;
+          playSound('kick');
+        } else if (btn.action === 'start') {
+          playSound('whistle');
+          initGame();
+        }
+        return;
+      }
+    }
+    return;
+  }
+
+  // Game over buttons
+  if (gameState === STATES.GAME_OVER) {
+    for (let btn of gameOverButtons) {
+      if (isInside(tx, ty, btn)) {
+        if (btn.action === 'retry') {
+          playSound('whistle');
+          initGame();
+        } else if (btn.action === 'menu') {
+          playSound('kick');
+          gameState = STATES.MENU;
+        }
+        return;
+      }
+    }
+    return;
+  }
+
+  // Dive buttons
+  if (gameState === STATES.GOALKEEPING && !ball.active) {
+    for (let btn of diveButtons) {
+      if (isInside(tx, ty, btn)) {
+        playerDive(btn.dir);
+        return;
+      }
+    }
+    // Also allow swipe for diving
+    touchStart = { x: tx, y: ty };
+    swipeActive = true;
+    swipePath = [{ x: tx, y: ty }];
+    return;
+  }
+
+  // Shooting - start swipe
+  if (gameState === STATES.SHOOTING && !ball.active) {
+    touchStart = { x: tx, y: ty };
+    swipeActive = true;
+    swipePath = [{ x: tx, y: ty }];
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!swipeActive) return;
+  const touch = e.touches[0];
+  touchCurrent = { x: touch.clientX, y: touch.clientY };
+  swipePath.push({ x: touchCurrent.x, y: touchCurrent.y });
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if (!swipeActive) return;
+  swipeActive = false;
+
+  if (gameState === STATES.SHOOTING && !ball.active && touchStart && touchCurrent) {
+    fireShot(touchStart.x, touchStart.y, touchCurrent.x, touchCurrent.y);
+  } else if (gameState === STATES.GOALKEEPING && !ball.active && touchStart && touchCurrent) {
+    const dx = touchCurrent.x - touchStart.x;
+    if (Math.abs(dx) > 30) {
+      playerDive(dx > 0 ? 1 : -1);
+    } else {
+      // Tap - dive center
+      playerDive(0);
+    }
+  }
+
+  touchStart = null;
+  touchCurrent = null;
+  swipePath = [];
+}, { passive: false });
+
+// Mouse support for desktop testing
+canvas.addEventListener('mousedown', (e) => {
+  ensureAudio();
+  const mx = e.clientX;
+  const my = e.clientY;
+  getButtons();
+
+  if (gameState === STATES.MENU) {
+    for (let btn of menuButtons) {
+      if (isInside(mx, my, btn)) {
+        if (btn.action === 'diff') { difficulty = btn.value; playSound('kick'); }
+        else if (btn.action === 'start') { playSound('whistle'); initGame(); }
+        return;
+      }
+    }
+    return;
+  }
+
+  if (gameState === STATES.GAME_OVER) {
+    for (let btn of gameOverButtons) {
+      if (isInside(mx, my, btn)) {
+        if (btn.action === 'retry') { playSound('whistle'); initGame(); }
+        else if (btn.action === 'menu') { playSound('kick'); gameState = STATES.MENU; }
+        return;
+      }
+    }
+    return;
+  }
+
+  if (gameState === STATES.GOALKEEPING && !ball.active) {
+    for (let btn of diveButtons) {
+      if (isInside(mx, my, btn)) {
+        playerDive(btn.dir);
+        return;
+      }
+    }
+    touchStart = { x: mx, y: my };
+    swipeActive = true;
+    swipePath = [{ x: mx, y: my }];
+    return;
+  }
+
+  if (gameState === STATES.SHOOTING && !ball.active) {
+    touchStart = { x: mx, y: my };
+    swipeActive = true;
+    swipePath = [{ x: mx, y: my }];
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!swipeActive) return;
+  touchCurrent = { x: e.clientX, y: e.clientY };
+  swipePath.push({ x: touchCurrent.x, y: touchCurrent.y });
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (!swipeActive) return;
+  swipeActive = false;
+
+  if (gameState === STATES.SHOOTING && !ball.active && touchStart && touchCurrent) {
+    fireShot(touchStart.x, touchStart.y, touchCurrent.x, touchCurrent.y);
+  } else if (gameState === STATES.GOALKEEPING && !ball.active && touchStart && touchCurrent) {
+    const dx = touchCurrent.x - touchStart.x;
+    if (Math.abs(dx) > 30) playerDive(dx > 0 ? 1 : -1);
+    else playerDive(0);
+  }
+  touchStart = null;
+  touchCurrent = null;
+  swipePath = [];
+});
+
+// ============================================================
+// SWAPE PREVIEW (during shooting)
+// ============================================================
+
+function drawSwipePreview() {
+  if (!swipeActive || swipePath.length < 2) return;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 4]);
+  ctx.beginPath();
+  ctx.moveTo(swipePath[0].x, swipePath[0].y);
+  for (let i = 1; i < swipePath.length; i++) {
+    ctx.lineTo(swipePath[i].x, swipePath[i].y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Arrow head
+  const last = swipePath[swipePath.length - 1];
+  const prev = swipePath[swipePath.length - 2];
+  const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath();
+  ctx.moveTo(last.x, last.y);
+  ctx.lineTo(last.x - 12 * Math.cos(angle - 0.4), last.y - 12 * Math.sin(angle - 0.4));
+  ctx.lineTo(last.x - 12 * Math.cos(angle + 0.4), last.y - 12 * Math.sin(angle + 0.4));
+  ctx.fill();
+
+  // Power indicator
+  const dist = dist(swipePath[0].x, swipePath[0].y, last.x, last.y);
+  const power = clamp(dist / (H * 0.5), 0.3, 1.0);
+  const powerColor = power < 0.5 ? '#00FF88' : power < 0.8 ? '#FFD700' : '#FF4444';
+
+  ctx.fillStyle = powerColor;
+  ctx.font = `bold ${14 * scale}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`Power: ${Math.round(power * 100)}%`, W / 2, H * 0.92);
+}
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+
+let lastTime = 0;
+function gameLoop(timestamp) {
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+
+  update();
+  draw();
+
+  // Draw swipe preview on top
+  if (gameState === STATES.SHOOTING && !ball.active) {
+    drawSwipePreview();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+resize();
+window.addEventListener('resize', resize);
+requestAnimationFrame(gameLoop);
+
+// Polyfill for roundRect
+if (!ctx.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r, r, r, r];
+    const [tl, tr, br, bl] = r;
+    this.moveTo(x + tl, y);
+    this.lineTo(x + w - tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + tr);
+    this.lineTo(x + w, y + h - br);
+    this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+    this.lineTo(x + bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - bl);
+    this.lineTo(x, y + tl);
+    this.quadraticCurveTo(x, y, x + tl, y);
+    this.closePath();
+  };
+}
+
+</script>
+</body>
+</html>

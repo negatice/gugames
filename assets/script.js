@@ -16,6 +16,7 @@
             { id: 11, name: "Stack Tower", category: "strategy", mode: "singleplayer", icon: "🟰", gradient: "linear-gradient(135deg, #22c55e, #16a34a)", rating: 4.7, plays: "14.8K", badge: "hot", desc: "tumpuk blok-bloknya sebanyak mungkin!", url: "games/stack_tower/index.html", image: "assets/images/stack_tower.jpeg" },
             { id: 12, name: "Find The Ball", category: "arcade", mode: "singleplayer", icon: "🏐", gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", rating: 4.6, plays: "10.5K", badge: "popular", desc: "Temukan bola yang tersembunyi!", url: "games/find_the_ball/index.html", image: "assets/images/find_the_ball.jpeg" },
             { id: 13, name: "Fishing Master", category: "strategy", mode: "singleplayer", icon: "🎣", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.8, plays: "13.2K", badge: "hot", desc: "Jadilah master memancing!", url: "games/fishing_master/index.html", image: "assets/images/fishing_master.jpeg" },
+            { id: 14, name: "Penalty Shootout", category: "strategy", mode: "singleplayer", icon: "⚽", gradient: "linear-gradient(135deg, #f59e0b, #d97706)", rating: 4.4, plays: "9.7K", badge: "new", desc: "Jadi penendang penalti terbaik!", url: "games/penalty_shootout/index.html", image: "assets/images/penalty_shootout.jpeg" },
         ];
         // ============================================
         // STATE

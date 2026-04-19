@@ -713,7 +713,7 @@ for(let f of fishes) {
   if(!f.alive) continue;
   ctx.save();
   ctx.translate(f.x, f.y);
-  if(f.vx > 0) ctx.scale(-1, 1);
+  if(f.vx < 0) ctx.scale(-1, 1);
   
   const img = FISH_IMAGES[f.type.imgKey];
   const drawSize = f.type.size * SCALE * 2.5;

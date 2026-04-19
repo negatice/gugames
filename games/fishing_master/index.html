@@ -14,7 +14,7 @@ canvas { display: block; width: 100%; height: 100%; }
 <canvas id="gameCanvas"></canvas>
 <script>
 // ============================================================
-// FISHING MASTER v3 - HP System & Tug-of-War
+// FISHING MASTER v4 - Joystick Fix, Strike Balance Bar, Timer, Boat
 // ============================================================
 
 const canvas = document.getElementById('gameCanvas');
@@ -49,6 +49,7 @@ function playSound(type) {
       case 'hit': osc.type='square'; osc.frequency.setValueAtTime(150,now); osc.frequency.exponentialRampToValueAtTime(50,now+0.15); gain.gain.setValueAtTime(0.2,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.15); osc.start(now); osc.stop(now+0.15); break;
       case 'reel': osc.type='sawtooth'; osc.frequency.setValueAtTime(300,now); osc.frequency.exponentialRampToValueAtTime(500,now+0.08); gain.gain.setValueAtTime(0.1,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.08); osc.start(now); osc.stop(now+0.08); break;
       case 'struggle': osc.type='triangle'; osc.frequency.setValueAtTime(120,now); osc.frequency.linearRampToValueAtTime(160,now+0.1); gain.gain.setValueAtTime(0.15,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.1); osc.start(now); osc.stop(now+0.1); break;
+      case 'snap': osc.type='sawtooth'; osc.frequency.setValueAtTime(800,now); osc.frequency.exponentialRampToValueAtTime(100,now+0.3); gain.gain.setValueAtTime(0.4,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.3); osc.start(now); osc.stop(now+0.3); break;
     }
   } catch(e) {}
 }
@@ -57,15 +58,13 @@ function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
 // --- GAME STATE ---
 const STATE = { MENU: 0, PLAYING: 1, RESULT: 2 };
 let gameState = STATE.MENU;
-let score = 0;
-let highScore = parseInt(localStorage.getItem('fishingMasterHigh') || '0');
-let combo = 0; let maxCombo = 0;
-let energy = 100;
+let score = 0; let highScore = parseInt(localStorage.getItem('fishingMasterHigh') || '0');
+let combo = 0; let maxCombo = 0; let energy = 100;
 let sessionFish = [];
-let gameTime = 0;
-let surfaceWait = 0;
+let gameTimer = 0;
+const GAME_DURATION = 30; // 30 seconds timer
 
-// --- FISH DEFINITIONS (Balanced HP & Resistance) ---
+// --- FISH DEFINITIONS ---
 const FISH_TYPES = [
   { name: 'Ikan Teri', emoji: '🐟', speed: 40, size: 14, score: 5, res: 0.4, hp: 12, pattern: 'straight', minD: 0, color: '#B3E5FC' },
   { name: 'Ikan Kecil', emoji: '🐠', speed: 55, size: 18, score: 10, res: 0.7, hp: 20, pattern: 'zigzag', minD: 10, color: '#4FC3F7' },
@@ -76,29 +75,20 @@ const FISH_TYPES = [
   { name: 'Paus Biru', emoji: '🐋', speed: 25, size: 42, score: 130, res: 3.2, hp: 160, pattern: 'straight', minD: 260, color: '#1565C0' },
   { name: 'Ikan Emas', emoji: '✨', speed: 90, size: 20, score: 160, res: 2.2, hp: 120, pattern: 'erratic', minD: 300, color: '#FFD700', glow: true },
 ];
-
 const OBSTACLE_TYPES = [
-  { name: 'Sampah', emoji: '🗑️', size: 16, effect: 'score_loss' },
-  { name: 'Ubur-ubur', emoji: '🪼', size: 22, effect: 'stun' },
-  { name: 'Bom', emoji: '💣', size: 20, effect: 'fail' },
+  { name: 'Sampah', emoji: '🗑️', effect: 'score_loss' },
+  { name: 'Ubur-ubur', emoji: '🪼', effect: 'stun' },
+  { name: 'Bom', emoji: '💣', effect: 'fail' },
 ];
 
 // --- ENTITIES ---
-let fishes = [];
-let obstacles = [];
-let particles = [];
-let bubbles = [];
-let ripples = [];
-let floatingTexts = [];
-
+let fishes = [], obstacles = [], particles = [], bubbles = [], ripples = [], floatingTexts = [];
 let hook = {
   x: 0, y: 0, vx: 0, vy: 0,
-  state: 'surface', // surface, drop, active, HOOKED, reel, escape
-  depth: 0, maxDepth: 0, lineLen: 0,
-  tension: 0,
-  caughtFish: null
+  state: 'surface', depth: 0, maxDepth: 0, lineLen: 0, tension: 0, caughtFish: null
 };
 
+// --- JOYSTICK ---
 let joystick = { active: false, dx: 0, dy: 0, baseX: 0, baseY: 0, touchId: null };
 let castBtn = { pressed: false, touchId: null };
 let reelBtn = { pressed: false, touchId: null };
@@ -114,9 +104,9 @@ function getBtnPos() {
 
 // --- INIT & SPAWN ---
 function initGame() {
-  score = 0; combo = 0; maxCombo = 0; energy = 100;
-  sessionFish = []; gameTime = 0; surfaceWait = 0;
-  hook = { x:W/2, y:60*SCALE, vx:0, vy:0, state:'surface', depth:0, maxDepth:0, lineLen:0, tension:0, caughtFish:null };
+  score = 0; combo = 0; maxCombo = 0; energy = 100; gameTimer = GAME_DURATION;
+  sessionFish = [];
+  hook = { x:W/2, y:65*SCALE, vx:0, vy:0, state:'surface', depth:0, maxDepth:0, lineLen:0, tension:0, caughtFish:null };
   fishes = []; obstacles = []; particles = []; bubbles = []; ripples = []; floatingTexts = [];
   spawnEntities();
   gameState = STATE.PLAYING;
@@ -131,54 +121,51 @@ function spawnEntities() {
       x: 20+Math.random()*(W-40),
       y: 100*SCALE+Math.random()*(H-220*SCALE),
       type: OBSTACLE_TYPES[Math.floor(Math.random()*OBSTACLE_TYPES.length)],
-      size: 16, alive: true, phase: Math.random()*Math.PI*2
+      alive: true, phase: Math.random()*Math.PI*2
     });
   }
 }
 
 function spawnFish() {
-  // Weighted spawn: deeper fish more likely as player goes deeper, but all types possible
   const pool = FISH_TYPES;
   const curDepth = hook.maxDepth / SCALE;
-  const weights = pool.map(f => {
-    let w = 1.0;
-    if (curDepth >= f.minD) w *= 2.5; // Boost intended depth
-    else w *= 0.4; // Still spawn but rarely
-    return w;
-  });
+  const weights = pool.map(f => curDepth >= f.minD ? 2.5 : 0.4);
   const totalW = weights.reduce((a,b)=>a+b,0);
   let r = Math.random()*totalW, type = pool[0];
   for(let i=0; i<pool.length; i++) { r -= weights[i]; if(r<=0) { type=pool[i]; break; } }
-
   const dir = Math.random()<0.5 ? 1 : -1;
   fishes.push({
     x: dir===1 ? W+30 : -30,
     y: 90*SCALE + Math.random()*(H-200*SCALE),
-    vx: type.speed*dir, vy: 0,
-    type: type, alive: true, time: Math.random()*100, phase: Math.random()*Math.PI*2, turnT: 0,
-    currentHP: type.hp // Initialize HP
+    vx: type.speed*dir, vy: 0, type, alive: true,
+    time: Math.random()*100, phase: Math.random()*Math.PI*2, turnT: 0, currentHP: type.hp
   });
 }
 
 // --- UPDATE ---
 function update(dt) {
   if(gameState !== STATE.PLAYING) return;
-  gameTime += dt;
-  if(hook.state !== 'reel' && hook.state !== 'escape') energy = Math.min(100, energy + 6*dt);
+  gameTimer -= dt;
+  if(gameTimer <= 0) { gameTimer = 0; gameState = STATE.RESULT; if(score>highScore){highScore=score;localStorage.setItem('fishingMasterHigh',highScore);} return; }
+
+  if(hook.state !== 'HOOKED') energy = Math.min(100, energy + 8*dt);
+
+  // Timer urgency: last 5 seconds
+  if(gameTimer < 5) { /* visual handled in render */ }
 
   switch(hook.state) {
     case 'surface':
-      hook.x = W/2; hook.y = 60*SCALE; hook.depth = 0; hook.lineLen = 0;
-      surfaceWait += dt;
-      if(surfaceWait > 2 && sessionFish.length > 0) gameState = STATE.RESULT;
+      hook.x = W/2; hook.y = 65*SCALE; hook.depth = 0;
       break;
 
     case 'drop':
       hook.vy += 180*dt; hook.vy = Math.min(hook.vy, 180);
-      hook.y += hook.vy*dt;
-      hook.depth = hook.y - 60*SCALE; hook.lineLen = hook.depth; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
-      if(joystick.active) hook.vx += joystick.dx*300*dt;
-      hook.vx *= 0.92; hook.x += hook.vx*dt; hook.x = Math.max(15, Math.min(W-15, hook.x));
+      hook.y += hook.vy*dt; hook.depth = hook.y - 65*SCALE; hook.lineLen = hook.depth; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
+      if(joystick.active) { hook.vx += joystick.dx*300*dt; hook.vy += joystick.dy*100*dt; } // Allow vertical influence while dropping
+      hook.vx *= 0.92; hook.vy *= 0.95;
+      hook.x += hook.vx*dt; hook.y += hook.vy*dt;
+      hook.x = Math.max(15, Math.min(W-15, hook.x));
+      hook.y = Math.min(H-50*SCALE, hook.y);
       if(hook.depth >= 450*SCALE || castBtn.pressed) {
         hook.state = 'active'; hook.vy = 0; hook.vx = 0;
         playSound('splash'); createRipple(hook.x, hook.y); vibrate(20);
@@ -189,14 +176,13 @@ function update(dt) {
       if(joystick.active) { hook.vx += joystick.dx*350*dt; hook.vy += joystick.dy*200*dt; }
       hook.vx *= 0.90; hook.vy *= 0.90;
       hook.x += hook.vx*dt; hook.y += hook.vy*dt;
-      hook.x = Math.max(15, Math.min(W-15, hook.x));
-      hook.y = Math.max(70*SCALE, Math.min(H-50*SCALE, hook.y));
-      hook.depth = hook.y - 60*SCALE; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
+      hook.x = Math.max(15, Math.min(W-15, hook.x)); hook.y = Math.max(75*SCALE, Math.min(H-50*SCALE, hook.y));
+      hook.depth = hook.y - 65*SCALE; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
 
       if(reelBtn.pressed && energy > 0) { hook.vy -= 250*dt; energy -= 12*dt; if(energy<=0){ energy=0; hook.state='reel'; } playSound('reel'); }
 
-      for(let f of fishes) { if(!f.alive) continue; let d = Math.hypot(hook.x-f.x, hook.y-f.y); if(d < f.type.size + 12*SCALE) { catchFish(f); break; } }
-      for(let o of obstacles) { if(!o.alive) continue; let d = Math.hypot(hook.x-o.x, hook.y-o.y); if(d < o.type.size + 12*SCALE) { hitObstacle(o); break; } }
+      for(let f of fishes) { if(!f.alive) continue; let d = Math.hypot(hook.x-f.x, hook.y-f.y); if(d < f.type.size*SCALE + 12*SCALE) { catchFish(f); break; } }
+      for(let o of obstacles) { if(!o.alive) continue; let d = Math.hypot(hook.x-o.x, hook.y-o.y); if(d < 16*SCALE + 12*SCALE) { hitObstacle(o); break; } }
       if(fishes.filter(f=>f.alive).length < 3) spawnFish();
       break;
 
@@ -205,46 +191,44 @@ function update(dt) {
       if(!f) { hook.state = 'reel'; break; }
 
       // Tarik-ulur physics
-      hook.x += (Math.random()-0.5) * 80 * f.type.res * dt * SCALE;
-      hook.y += f.type.res * 35 * dt; // Fish menarik ke bawah
+      hook.x += Math.sin(Date.now()*0.005*f.type.res)*40*f.type.res*dt*SCALE;
+      hook.y += f.type.res*35*dt;
       hook.x = Math.max(15, Math.min(W-15, hook.x));
-      hook.y = Math.min(H - 40, hook.y);
-      hook.depth = hook.y - 60*SCALE; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
+      hook.y = Math.min(H-40, hook.y);
+      hook.depth = hook.y - 65*SCALE; hook.maxDepth = Math.max(hook.maxDepth, hook.depth);
 
       if(reelBtn.pressed && energy > 0) {
         energy -= (12 + f.type.res*6) * dt;
-        hook.y -= 70 * dt; // Player menarik ke atas
-        f.currentHP -= (18 + f.type.res*1.5) * dt; // HP ikan turun
+        hook.y -= 70 * dt;
+        f.currentHP -= (18 + f.type.res*1.5) * dt;
         hook.tension += 3.2 * dt;
         if(Math.random() < 0.2) playSound('struggle');
       } else {
         hook.tension -= 3.8 * dt;
-        f.currentHP += 1.5 * dt; // HP sedikit pulih jika dilepas
+        f.currentHP += 1.5 * dt;
       }
       hook.tension = Math.max(0, Math.min(1, hook.tension));
       f.currentHP = Math.max(0, Math.min(f.type.hp, f.currentHP));
 
       if(f.currentHP <= 0) {
-        hook.state = 'reel';
-        playSound('catch'); vibrate([30,20,30]);
-        addFloatingText('✅ LEMAS! DAPAT!', W/2, 90*SCALE, '#4CAF50');
+        hook.state = 'reel'; playSound('catch'); vibrate([30,20,30]);
+        addFloatingText('✅ LEMAS! DAPAT!', W/2, 100*SCALE, '#4CAF50');
       } else if(hook.tension >= 1) {
-        escapeFish();
+        snapLine();
       } else if(energy <= 0 && !reelBtn.pressed) {
-        hook.tension += 0.8 * dt; // Energy habis -> tegang naik
+        hook.tension += 0.8 * dt;
       }
       break;
     }
 
     case 'reel':
-      if(hook.caughtFish) hook.y -= 160*dt;
-      else hook.y -= 200*dt;
-      hook.depth = Math.max(0, hook.y - 60*SCALE); hook.lineLen = hook.depth;
+      if(hook.caughtFish) hook.y -= 160*dt; else hook.y -= 200*dt;
+      hook.depth = Math.max(0, hook.y - 65*SCALE); hook.lineLen = hook.depth;
       hook.x += Math.sin(Date.now()*0.008)*2*SCALE;
-      if(hook.y <= 60*SCALE) {
-        hook.y = 60*SCALE; hook.state = 'surface';
+      if(hook.y <= 65*SCALE) {
+        hook.y = 65*SCALE; hook.state = 'surface';
         if(hook.caughtFish) addScore(hook.caughtFish);
-        hook.caughtFish = null; hook.tension = 0; surfaceWait = 0;
+        hook.caughtFish = null; hook.tension = 0;
       }
       break;
   }
@@ -261,13 +245,10 @@ function update(dt) {
     }
     f.x += f.vx*dt; f.y += f.vy*dt;
     if(f.x < -40) f.x = W+40; if(f.x > W+40) f.x = -40;
-    f.y = Math.max(70*SCALE, Math.min(H-50*SCALE, f.y));
+    f.y = Math.max(75*SCALE, Math.min(H-50*SCALE, f.y));
   }
-
-  // Obstacles
   for(let o of obstacles) { if(!o.alive) continue; o.phase += dt*1.5; o.y += Math.sin(o.phase)*15*dt; }
 
-  // Particles & FX
   updateArr(particles, p => { p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt; return p.life > 0; });
   updateArr(bubbles, b => { b.y -= 35*dt; b.phase += dt*3; b.x += Math.sin(b.phase)*10*dt; return b.y > -10; });
   updateArr(ripples, r => { r.radius += 40*dt; r.alpha -= dt*1.5; return r.alpha > 0; });
@@ -282,13 +263,20 @@ function catchFish(f) {
   sessionFish.push({ ...f.type, caught: true });
   combo++; maxCombo = Math.max(maxCombo, combo);
   playSound('splash'); vibrate(30);
-  addFloatingText('⚡ STRIKE!', W/2, 80*SCALE, '#FF5722');
+  addFloatingText('⚡ STRIKE!', W/2, 110*SCALE, '#FF5722');
+}
+
+function snapLine() {
+  playSound('snap'); vibrate([50,30,80]); combo = 0;
+  addFloatingText('💔 TALI PUTUS!', W/2, 110*SCALE, '#F44336');
+  if(hook.caughtFish) hook.caughtFish.alive = true;
+  hook.caughtFish = null; hook.tension = 0; hook.state = 'reel';
 }
 
 function escapeFish() {
   playSound('hit'); vibrate(60); combo = 0;
-  addFloatingText('💨 LEPAS!', W/2, 90*SCALE, '#F44336');
-  hook.caughtFish.alive = true;
+  addFloatingText('💨 LEPAS!', W/2, 110*SCALE, '#F44336');
+  if(hook.caughtFish) hook.caughtFish.alive = true;
   hook.caughtFish = null; hook.tension = 0; hook.state = 'reel';
 }
 
@@ -305,10 +293,9 @@ function addScore(fish) {
   const comboBonus = combo > 1 ? Math.floor(base * 0.2 * (combo-1)) : 0;
   const depthBonus = hook.maxDepth > 250*SCALE ? Math.floor(base * 0.3) : 0;
   score += base + comboBonus + depthBonus;
-  addFloatingText(`+${base + comboBonus + depthBonus}`, W/2, 90*SCALE, fish.color);
+  addFloatingText(`+${base + comboBonus + depthBonus}`, W/2, 100*SCALE, fish.color);
 }
-
-function addFloatingText(txt, x, y, color) { floatingTexts.push({ text:txt, x, y, color, life:1.5, max:1.5, alpha:1 }); }
+function addFloatingText(txt,x,y,c) { floatingTexts.push({text:txt,x,y,c,life:1.5,max:1.5,alpha:1}); }
 function createRipple(x,y) { for(let i=0;i<3;i++) ripples.push({x,y,radius:5+i*5,alpha:0.8-i*0.2}); }
 
 // --- RENDER ---
@@ -327,29 +314,67 @@ function renderMenu() {
   for(let x=0;x<W;x+=15) ctx.lineTo(x, 60*SCALE+Math.sin(x*0.02+Date.now()*0.004)*6*SCALE);
   ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.fill();
 
+  drawBoat(W/2, 35*SCALE);
+
   ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=8;
   ctx.font=`bold ${40*SCALE}px Arial`; ctx.fillStyle='#FFD700'; ctx.textAlign='center'; ctx.fillText('🎣',W/2,H*0.22);
   ctx.font=`bold ${34*SCALE}px Arial`; ctx.fillStyle='#FFF'; ctx.fillText('FISHING',W/2,H*0.30); ctx.fillText('MASTER',W/2,H*0.37);
   ctx.restore();
-
-  ctx.font=`${16*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.textAlign='center'; ctx.fillText(`🏆 High Score: ${highScore}`,W/2,H*0.48);
+  ctx.font=`${15*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.textAlign='center'; ctx.fillText(`🏆 High Score: ${highScore}  |  ⏱️ 30 detik`,W/2,H*0.48);
   const bw=180*SCALE, bh=50*SCALE, bx=(W-bw)/2;
-  drawButton(bx, H*0.55, bw, bh, '▶ START', '#4CAF50', '#2E7D32');
+  drawButton(bx, H*0.55, bw, bh, '▶ START (30s)', '#4CAF50', '#2E7D32');
   ctx.font=`${11*SCALE}px Arial`; ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillText('Tap untuk audio',W/2,H*0.92);
+}
+
+function drawBoat(x, y) {
+  const s = SCALE;
+  // Hull
+  ctx.fillStyle = '#8D6E63';
+  ctx.beginPath(); ctx.moveTo(x-45*s, y); ctx.lineTo(x+45*s, y); ctx.lineTo(x+35*s, y+15*s); ctx.lineTo(x-35*s, y+15*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5D4037';
+  ctx.fillRect(x-45*s, y-3*s, 90*s, 3*s);
+  // Mast
+  ctx.strokeStyle = '#4E342E'; ctx.lineWidth = 3*s;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y-35*s); ctx.stroke();
+  // Flag
+  ctx.fillStyle = '#F44336';
+  ctx.beginPath(); ctx.moveTo(x, y-35*s); ctx.lineTo(x+12*s, y-30*s); ctx.lineTo(x, y-25*s); ctx.closePath(); ctx.fill();
+  // Cabin
+  ctx.fillStyle = '#D32F2F';
+  ctx.fillRect(x-15*s, y-18*s, 30*s, 10*s);
+  ctx.fillStyle = '#B71C1C';
+  ctx.fillRect(x-12*s, y-16*s, 10*s, 8*s);
+  // Water effect
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5*s;
+  for(let i=-1; i<=1; i++) {
+    ctx.beginPath(); ctx.moveTo(x-50*s, y+18*s+i*5*s);
+    for(let bx=0; bx<=50*s; bx+=10*s) ctx.quadraticCurveTo(x-45*s+bx, y+15*s+i*5*s, x-40*s+bx, y+18*s+i*5*s);
+    ctx.stroke();
+  }
 }
 
 function renderGame() {
   const depthR = hook.depth/(450*SCALE);
   const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#87CEEB'); g.addColorStop(0.2,'#4FC3F7'); g.addColorStop(0.2+depthR*0.3,'#01579B'); g.addColorStop(1,'#001A33');
+  g.addColorStop(0,'#87CEEB'); g.addColorStop(0.18,'#4FC3F7'); g.addColorStop(0.2+depthR*0.25,'#01579B'); g.addColorStop(1,'#001A33');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
+  // Water surface line
+  ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.moveTo(0,65*SCALE);
+  for(let x=0;x<W;x+=15) ctx.lineTo(x, 65*SCALE+Math.sin(x*0.02+Date.now()*0.004)*5*SCALE);
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.fill();
+
+  // Light rays
   for(let i=0;i<4;i++){ let x=W/2+Math.sin(Date.now()*0.001+i)*100; ctx.fillStyle=`rgba(255,255,200,${0.04-depthR*0.02})`; ctx.beginPath(); ctx.moveTo(x-20,0); ctx.lineTo(x+20,0); ctx.lineTo(x+80,H); ctx.lineTo(x-80,H); ctx.fill(); }
+
+  // Bubbles & Ripples
   for(let b of bubbles){ ctx.globalAlpha=b.alpha; ctx.fillStyle='#FFF'; ctx.beginPath(); ctx.arc(b.x,b.y,b.size,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
   for(let r of ripples){ ctx.strokeStyle=`rgba(255,255,255,${r.alpha})`; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(r.x,r.y,r.radius,r.radius*0.3,0,0,Math.PI*2); ctx.stroke(); }
 
-  for(let o of obstacles) { if(!o.alive) continue; ctx.font=`${o.type.size*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(o.type.emoji,o.x,o.y); }
+  // Obstacles
+  for(let o of obstacles) { if(!o.alive) continue; ctx.font=`${16*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(o.type.emoji,o.x,o.y); }
 
+  // Fishes
   for(let f of fishes) {
     if(!f.alive) continue;
     ctx.save(); ctx.translate(f.x, f.y);
@@ -358,7 +383,7 @@ function renderGame() {
     ctx.font=`${f.type.size*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(f.type.emoji, 0, 0);
     ctx.restore();
 
-    // HP BAR (Ganti text nama)
+    // HP BAR
     const barW = 26*SCALE, barH = 3.5*SCALE;
     const bx = f.x - barW/2, by = f.y - f.type.size*SCALE - 10;
     const hpPct = f.currentHP / f.type.hp;
@@ -367,16 +392,18 @@ function renderGame() {
     ctx.fillRect(bx, by, barW * hpPct, barH);
   }
 
+  // --- BOAT ---
+  drawBoat(W/2, 40*SCALE);
+
   // Hook & Line
   if(hook.state !== 'surface') {
-    const tensionColor = hook.tension > 0.7 ? '#F44336' : hook.tension > 0.4 ? '#FFC107' : 'rgba(255,255,255,0.4)';
-    ctx.strokeStyle = tensionColor; ctx.lineWidth = 2; ctx.beginPath();
-    ctx.moveTo(W/2, 55*SCALE);
-    ctx.quadraticCurveTo((W/2+hook.x)/2 + Math.sin(Date.now()*0.005)*5*SCALE, (55*SCALE+hook.y)/2, hook.x, hook.y);
+    const tensionColor = hook.state==='HOOKED' ? (hook.tension>0.7?'#F44336':hook.tension>0.4?'#FFC107':'#4CAF50') : 'rgba(255,255,255,0.4)';
+    ctx.strokeStyle = tensionColor; ctx.lineWidth = hook.state==='HOOKED' ? 2.5*SCALE : 1.5*SCALE;
+    ctx.beginPath(); ctx.moveTo(W/2, 50*SCALE);
+    ctx.quadraticCurveTo((W/2+hook.x)/2 + Math.sin(Date.now()*0.005)*5*SCALE, (50*SCALE+hook.y)/2, hook.x, hook.y);
     ctx.stroke();
 
-    ctx.fillStyle='#FF5722'; ctx.beginPath(); ctx.arc(W/2, 50*SCALE, 3, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='#795548'; ctx.fillRect(W/2-2, 45*SCALE, 4, 12*SCALE);
+    ctx.fillStyle='#FF5722'; ctx.beginPath(); ctx.arc(W/2, 48*SCALE, 3, 0, Math.PI*2); ctx.fill();
   }
 
   ctx.font=`${20*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -388,33 +415,83 @@ function renderGame() {
   }
 
   for(let p of particles){ ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
-  for(let t of floatingTexts){ ctx.globalAlpha=t.alpha; ctx.font=`bold ${14*SCALE}px Arial`; ctx.fillStyle=t.color; ctx.textAlign='center'; ctx.fillText(t.text,t.x,t.y); } ctx.globalAlpha=1;
+  for(let t of floatingTexts){ ctx.globalAlpha=t.alpha; ctx.font=`bold ${14*SCALE}px Arial`; ctx.fillStyle=t.c; ctx.textAlign='center'; ctx.fillText(t.text,t.x,t.y); } ctx.globalAlpha=1;
 
   renderUI();
 }
 
 function renderUI() {
-  const barH = 45*SCALE;
-  ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fillRect(0,0,W,barH);
-  ctx.font=`bold ${17*SCALE}px Arial`; ctx.fillStyle='#FFD700'; ctx.textAlign='left'; ctx.fillText(`🏆 ${score}`,10*SCALE,20*SCALE);
-  if(combo>1){ ctx.font=`bold ${13*SCALE}px Arial`; ctx.fillStyle='#FF5722'; ctx.fillText(`🔥 x${combo}`,10*SCALE,36*SCALE); }
-  ctx.font=`${13*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.textAlign='center'; ctx.fillText(`🌊 ${Math.floor(hook.depth/SCALE)}m`,W/2,20*SCALE);
+  // Top bar
+  ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(0,0,W,50*SCALE);
 
-  // Depth & Energy Bars
-  const dbW=100*SCALE, dbX=W/2-dbW/2, dbY=30*SCALE, dbH=6*SCALE;
-  ctx.fillStyle='rgba(255,255,255,0.2)'; roundRect(dbX,dbY,dbW,dbH,3*SCALE); ctx.fill();
-  ctx.fillStyle='#0288D1'; roundRect(dbX,dbY,dbW*Math.min(1,hook.depth/(450*SCALE)),dbH,3*SCALE); ctx.fill();
+  // Timer
+  const timerColor = gameTimer <= 5 ? '#F44336' : gameTimer <= 10 ? '#FFC107' : '#FFF';
+  ctx.font=`bold ${18*SCALE}px Arial`; ctx.fillStyle=timerColor; ctx.textAlign='center';
+  const tMin = Math.floor(gameTimer/60), tSec = Math.floor(gameTimer%60);
+  ctx.fillText(`⏱️ ${tMin}:${tSec.toString().padStart(2,'0')}`, W/2, 18*SCALE);
 
-  ctx.textAlign='right'; ctx.fillText(`⚡ ${Math.floor(energy)}%`, W-10*SCALE, 20*SCALE);
-  const ebW=70*SCALE, ebX=W-10*SCALE-ebW, ebY=28*SCALE;
+  // Score & Combo
+  ctx.textAlign='left'; ctx.font=`bold ${16*SCALE}px Arial`; ctx.fillStyle='#FFD700';
+  ctx.fillText(`🏆 ${score}`, 10*SCALE, 20*SCALE);
+  if(combo>1){ ctx.font=`bold ${12*SCALE}px Arial`; ctx.fillStyle='#FF5722'; ctx.fillText(`🔥x${combo}`,10*SCALE,36*SCALE); }
+
+  // Depth
+  ctx.textAlign='center'; ctx.font=`${12*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.fillText(`🌊 ${Math.floor(hook.depth/SCALE)}m`,W/2,38*SCALE);
+
+  // === STRIKE BALANCE BAR (Only when HOOKED) ===
+  if(hook.state === 'HOOKED' && hook.caughtFish) {
+    const barY = 42*SCALE, barH = 12*SCALE, barW = 200*SCALE, barX = (W - barW)/2;
+    const tension = hook.tension;
+
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; roundRect(barX-4, barY-2, barW+8, barH+4, 6*SCALE); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; roundRect(barX-4, barY-2, barW+8, barH+4, 6*SCALE); ctx.stroke();
+
+    // Gradient fill
+    const grd = ctx.createLinearGradient(barX, 0, barX+barW, 0);
+    grd.addColorStop(0, '#4CAF50'); grd.addColorStop(0.5, '#FFC107'); grd.addColorStop(0.8, '#F44336'); grd.addColorStop(1, '#B71C1C');
+    ctx.fillStyle = grd;
+    roundRect(barX, barY, barW * tension, barH, 4*SCALE); ctx.fill();
+
+    // Marker
+    const markX = barX + barW * tension;
+    ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.arc(markX, barY + barH/2, 4*SCALE, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(markX, barY + barH/2, 4*SCALE, 0, Math.PI*2); ctx.stroke();
+
+    // Labels
+    ctx.font = `bold ${9*SCALE}px Arial`; ctx.textAlign = 'center';
+    ctx.fillStyle = '#4CAF50'; ctx.fillText('AMAN', barX + 20*SCALE, barY - 4*SCALE);
+    ctx.fillStyle = '#F44336'; ctx.fillText('PUTUS!', barX + barW - 20*SCALE, barY - 4*SCALE);
+
+    // Warning flash when high
+    if(tension > 0.75) {
+      const flash = Math.sin(Date.now()*0.01) > 0;
+      if(flash) {
+        ctx.fillStyle = 'rgba(244,67,54,0.15)'; ctx.fillRect(0,0,W,H);
+        ctx.font = `bold ${11*SCALE}px Arial`; ctx.fillStyle='#F44336'; ctx.textAlign='center'; ctx.fillText('⚠️ TERLALU TEGANG! LEPAS TOMBOL SEJENAK!', W/2, 72*SCALE);
+      }
+    }
+  }
+
+  // Energy
+  ctx.textAlign='right'; ctx.font=`${12*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.fillText(`⚡${Math.floor(energy)}%`, W-10*SCALE, 20*SCALE);
+  const ebW=60*SCALE, ebX=W-10*SCALE-ebW, ebY=32*SCALE;
   ctx.fillStyle='rgba(255,255,255,0.2)'; roundRect(ebX,ebY,ebW,5*SCALE,2*SCALE); ctx.fill();
   ctx.fillStyle=energy>30?'#4CAF50':'#F44336'; roundRect(ebX,ebY,ebW*(energy/100),5*SCALE,2*SCALE); ctx.fill();
 
-  ctx.font=`${11*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.textAlign='left'; ctx.fillText(`🐟 ${sessionFish.length}`, 10*SCALE+(combo>1?60*SCALE:0), 36*SCALE);
+  // Fish count
+  ctx.textAlign='left'; ctx.font=`${11*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.fillText(`🐟 ${sessionFish.length}`, 10*SCALE+(combo>1?60*SCALE:0), 42*SCALE);
 
+  // Controls
   const b = getBtnPos();
-  ctx.globalAlpha=0.25; ctx.fillStyle='#FFF'; ctx.beginPath(); ctx.arc(b.joy.x,b.joy.y,b.joy.r,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=0.6; ctx.strokeStyle='#FFF'; ctx.lineWidth=2; ctx.stroke();
-  ctx.globalAlpha=0.8; ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(b.joy.x+joystick.dx*b.joy.r*0.7, b.joy.y+joystick.dy*b.joy.r*0.7, 16*SCALE, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.globalAlpha=1;
+  // Joystick
+  ctx.globalAlpha=0.25; ctx.fillStyle='#FFF'; ctx.beginPath(); ctx.arc(b.joy.x,b.joy.y,b.joy.r,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=0.6; ctx.strokeStyle='#FFF'; ctx.lineWidth=2; ctx.stroke();
+  ctx.globalAlpha=0.8; ctx.fillStyle='rgba(255,255,255,0.9)';
+  const jkx = b.joy.x + joystick.dx * b.joy.r;
+  const jky = b.joy.y + joystick.dy * b.joy.r;
+  ctx.beginPath(); ctx.arc(jkx, jky, 16*SCALE, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.globalAlpha=1;
 
   drawButton(b.cast.x, b.cast.y, b.cast.w, b.cast.h, hook.state==='surface'?'🎣 CAST':'⏸ HOLD', '#4CAF50', '#2E7D32', hook.state==='surface');
   drawButton(b.reel.x, b.reel.y, b.reel.w, b.reel.h, '⚡ REEL', '#FF9800', '#E65100', hook.state==='active' || hook.state==='HOOKED');
@@ -432,12 +509,13 @@ function renderResult() {
   const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#1A237E'); g.addColorStop(1,'#0D47A1');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
   ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=10;
-  ctx.font=`bold ${30*SCALE}px Arial`; ctx.fillStyle='#FFD700'; ctx.textAlign='center'; ctx.fillText('🎣 HASIL TANGKAPAN',W/2,50*SCALE); ctx.restore();
-  ctx.font=`bold ${26*SCALE}px Arial`; ctx.fillStyle='#FFF'; ctx.fillText(`🏆 ${score}`,W/2,95*SCALE);
-  if(score>=highScore && score>0){ ctx.font=`bold ${15*SCALE}px Arial`; ctx.fillStyle='#FFD700'; ctx.fillText('🎉 REKOR BARU!',W/2,125*SCALE); highScore=score; localStorage.setItem('fishingMasterHigh',highScore); }
-  ctx.font=`${13*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.textAlign='center'; ctx.fillText(`Total: ${sessionFish.length} | Max Combo: ${maxCombo}x | Depth: ${Math.floor(hook.maxDepth/SCALE)}m`,W/2,155*SCALE);
+  ctx.font=`bold ${28*SCALE}px Arial`; ctx.fillStyle='#FFD700'; ctx.textAlign='center'; ctx.fillText('⏱️ WAKTU HABIS!',W/2,50*SCALE); ctx.restore();
+  ctx.font=`bold ${26*SCALE}px Arial`; ctx.fillStyle='#FFF'; ctx.fillText(`🏆 Skor: ${score}`,W/2,95*SCALE);
+  ctx.font=`bold ${16*SCALE}px Arial`; ctx.fillStyle='#4CAF50'; ctx.textAlign='center'; ctx.fillText(`🐟 Total Tangkapan: ${sessionFish.length}`,W/2,125*SCALE);
+  if(score>=highScore && score>0){ ctx.font=`bold ${15*SCALE}px Arial`; ctx.fillStyle='#FFD700'; ctx.fillText('🎉 REKOR BARU!',W/2,150*SCALE); highScore=score; localStorage.setItem('fishingMasterHigh',highScore); }
+  ctx.font=`${13*SCALE}px Arial`; ctx.fillStyle='#B3E5FC'; ctx.fillText(`Max Combo: ${maxCombo}x | Depth: ${Math.floor(hook.maxDepth/SCALE)}m`,W/2,175*SCALE);
 
-  let ly=190*SCALE; const grouped={};
+  let ly=200*SCALE; const grouped={};
   for(let f of sessionFish) { if(!grouped[f.name]) grouped[f.name]={count:0,total:0,emoji:f.emoji,color:f.color}; grouped[f.name].count++; grouped[f.name].total+=f.score; }
   const sorted=Object.entries(grouped).sort((a,b)=>b[1].total-a[1].total);
   for(let [name,d] of sorted){ ctx.font=`${13*SCALE}px Arial`; ctx.textAlign='left'; ctx.fillStyle=d.color; ctx.fillText(`${d.emoji} ${name} x${d.count}`,25*SCALE,ly); ctx.textAlign='right'; ctx.fillStyle='#FFF'; ctx.fillText(`+${d.total}`,W-25*SCALE,ly); ly+=22*SCALE; }
@@ -455,16 +533,24 @@ canvas.addEventListener('touchstart', e => {
   for(let t of e.changedTouches) {
     const tx=t.clientX, ty=t.clientY, id=t.identifier;
     if(gameState===STATE.MENU) { const bw=180*SCALE,bh=50*SCALE,bx=(W-bw)/2; if(tx>=bx&&tx<=bx+bw&&ty>=H*0.55&&ty<=H*0.55+bh) initGame(); return; }
-    if(gameState===STATE.RESULT) { const bw=150*SCALE,bh=45*SCALE,bx=(W-bw)/2; if(tx>=bx&&tx<=bx+bw&&ty>=H-130*SCALE&&ty<=H-130*SCALE+bh) initGame(); if(tx>=bx&&tx<=bx+bw&&ty>=H-75*SCALE&&ty<=H-75*SCALE+bh){gameState=STATE.MENU;surfaceWait=0;} return; }
+    if(gameState===STATE.RESULT) { const bw=150*SCALE,bh=45*SCALE,bx=(W-bw)/2; if(tx>=bx&&tx<=bx+bw&&ty>=H-130*SCALE&&ty<=H-130*SCALE+bh) initGame(); if(tx>=bx&&tx<=bx+bw&&ty>=H-75*SCALE&&ty<=H-75*SCALE+bh){gameState=STATE.MENU;} return; }
     const b = getBtnPos();
-    if(tx>=b.cast.x&&tx<=b.cast.x+b.cast.w&&ty>=b.cast.y&&ty<=b.cast.y+b.cast.h) { castBtn.pressed=true; castBtn.touchId=id; if(hook.state==='surface'){hook.state='drop';hook.vy=0;hook.maxDepth=0;surfaceWait=0;} }
+    if(tx>=b.cast.x&&tx<=b.cast.x+b.cast.w&&ty>=b.cast.y&&ty<=b.cast.y+b.cast.h) { castBtn.pressed=true; castBtn.touchId=id; if(hook.state==='surface'){hook.state='drop';hook.vy=0;hook.maxDepth=0;} }
     else if(tx>=b.reel.x&&tx<=b.reel.x+b.reel.w&&ty>=b.reel.y&&ty<=b.reel.y+b.reel.h) { reelBtn.pressed=true; reelBtn.touchId=id; }
-    else { const dx=tx-b.joy.x, dy=ty-b.joy.y; if(Math.hypot(dx,dy)<b.joy.r*1.8){joystick.active=true;joystick.touchId=id;updateJoy(tx,ty);} }
+    else {
+      const dx=tx-b.joy.x, dy=ty-b.joy.y;
+      if(Math.hypot(dx,dy)<b.joy.r*1.8) {
+        joystick.active=true; joystick.touchId=id;
+        joystick.baseX = tx; // FIX: Set base position on first touch
+        joystick.baseY = ty;
+        updateJoy(tx, ty);
+      }
+    }
   }
 }, {passive:false});
 
 canvas.addEventListener('touchmove', e => { e.preventDefault(); for(let t of e.changedTouches) if(joystick.active&&t.identifier===joystick.touchId) updateJoy(t.clientX,t.clientY); }, {passive:false});
-canvas.addEventListener('touchend', e => { e.preventDefault(); for(let t of e.changedTouches) { const id=t.identifier; if(id===castBtn.touchId) castBtn.pressed=false; if(id===reelBtn.touchId) reelBtn.pressed=false; if(id===joystick.touchId){joystick.active=false;joystick.dx=0;joystick.dy=0;} } }, {passive:false});
+canvas.addEventListener('touchend', e => { e.preventDefault(); for(let t of e.changedTouches) { const id=t.identifier; if(id===castBtn.touchId) castBtn.pressed=false; if(id===reelBtn.touchId) reelBtn.pressed=false; if(id===joystick.touchId){joystick.active=false;joystick.dx=0;joystick.dy=0;joystick.baseX=0;joystick.baseY=0;} } }, {passive:false});
 
 function updateJoy(tx,ty) {
   let dx=tx-joystick.baseX, dy=ty-joystick.baseY;

@@ -15,7 +15,7 @@
             { id: 10, name: "Photo Puzzle", category: "strategy", mode: "singleplayer", icon: "🧩", gradient: "linear-gradient(135deg, #64748b, #475569)", rating: 4.5, plays: "6.1K", badge: "new", desc: "Upload foto dan susun kembali foto mu!", url: "games/photo_puzzle/index.html", image: "assets/images/photo_puzzle.jpeg" },
             { id: 11, name: "Stack Tower", category: "strategy", mode: "singleplayer", icon: "🟰", gradient: "linear-gradient(135deg, #22c55e, #16a34a)", rating: 4.7, plays: "14.8K", badge: "hot", desc: "tumpuk blok-bloknya sebanyak mungkin!", url: "games/stack_tower/index.html", image: "assets/images/stack_tower.jpeg" },
             { id: 12, name: "Find The Ball", category: "arcade", mode: "singleplayer", icon: "🏐", gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", rating: 4.6, plays: "10.5K", badge: "popular", desc: "Temukan bola yang tersembunyi!", url: "games/find_the_ball/index.html", image: "assets/images/find_the_ball.jpeg" },
-            { id: 13, name: "Fishing Master", category: "strategy", mode: "singleplayer", icon: "🎣", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.8, plays: "13.2K", badge: "hot", desc: "Jadilah master memancing!", url: "games/fishing_master/index.html", image: "assets/images/fishing_master.jpeg" },
+            { id: 13, name: "Fishing Master", category: "strategy", mode: "singleplayer", icon: "🎣", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.8, plays: "13.2K", badge: "hot", desc: "Jadilah master memancing!", url: "games/fishing_master/index.html", image: "assets/images/master_fishing.jpeg" },
         ];
         // ============================================
         // STATE

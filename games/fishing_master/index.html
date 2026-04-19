@@ -90,14 +90,14 @@ let buttonHover = { level: -1, start: false };
 
 // --- FISH DEFINITIONS ---
 const FISH_TYPES = [
-  { name: 'Ikan Teri', emoji: '🐟', weight: 50, size: 14, res: 0.4, hp: 12, pattern: 'straight', minD: 0, color: '#B3E5FC' },
-  { name: 'Ikan Kecil', emoji: '🐠', weight: 100, size: 18, res: 0.7, hp: 20, pattern: 'zigzag', minD: 10, color: '#4FC3F7' },
-  { name: 'Ikan Pari', emoji: '🦑', weight: 250, size: 22, res: 1.1, hp: 35, pattern: 'circle', minD: 40, color: '#9C27B0' },
-  { name: 'Ikan Buntal', emoji: '🐡', weight: 500, size: 26, res: 1.4, hp: 50, pattern: 'straight', minD: 80, color: '#FF9800' },
-  { name: 'Ikan Tuna', emoji: '🐟', weight: 1000, size: 28, res: 1.8, hp: 70, pattern: 'erratic', minD: 130, color: '#2196F3' },
-  { name: 'Hiu Kecil', emoji: '🦈', weight: 2000, size: 34, res: 2.5, hp: 100, pattern: 'zigzag', minD: 180, color: '#607D8B' },
-  { name: 'Paus Biru', emoji: '🐋', weight: 5000, size: 42, res: 3.2, hp: 160, pattern: 'straight', minD: 260, color: '#1565C0' },
-  { name: 'Ikan Emas', emoji: '✨', weight: 3000, size: 20, res: 2.2, hp: 120, pattern: 'erratic', minD: 300, color: '#FFD700', glow: true },
+  { name: 'Ikan Teri',  emoji: '🐟', weight: 50,   size: 14, res: 0.4, hp: 12,  speed: 40,  pattern: 'straight', minD: 0,   color: '#B3E5FC' },
+  { name: 'Ikan Kecil', emoji: '🐠', weight: 100,  size: 18, res: 0.7, hp: 20,  speed: 55,  pattern: 'zigzag',   minD: 10,  color: '#4FC3F7' },
+  { name: 'Ikan Pari',  emoji: '🦑', weight: 250,  size: 22, res: 1.1, hp: 35,  speed: 45,  pattern: 'circle',   minD: 40,  color: '#9C27B0' },
+  { name: 'Ikan Buntal',emoji: '🐡', weight: 500,  size: 26, res: 1.4, hp: 50,  speed: 35,  pattern: 'straight', minD: 80,  color: '#FF9800' },
+  { name: 'Ikan Tuna',  emoji: '🐟', weight: 1000, size: 28, res: 1.8, hp: 70,  speed: 70,  pattern: 'erratic',  minD: 130, color: '#2196F3' },
+  { name: 'Hiu Kecil',  emoji: '🦈', weight: 2000, size: 34, res: 2.5, hp: 100, speed: 60,  pattern: 'zigzag',   minD: 180, color: '#607D8B' },
+  { name: 'Paus Biru',  emoji: '🐋', weight: 5000, size: 42, res: 3.2, hp: 160, speed: 25,  pattern: 'straight', minD: 260, color: '#1565C0' },
+  { name: 'Ikan Emas',  emoji: '✨', weight: 3000, size: 20, res: 2.2, hp: 120, speed: 80,  pattern: 'erratic',  minD: 300, color: '#FFD700', glow: true },
 ];
 const OBSTACLE_TYPES = [
   { name: 'Sampah', emoji: '🗑️', effect: 'fail' },
@@ -710,7 +710,7 @@ function renderResult() {
   ctx.globalAlpha = 1;
 
   // Floating fish decorations
-  const fishEmojis = ['🐟', '🐠', '🐡', '', '🐋'];
+  const fishEmojis = ['🐟', '🐠', '🐡', '🦈', '🐋'];
   for(let i=0; i<5; i++) {
     const fx = (W/2) + Math.sin(Date.now()*0.002 + i*1.3)*200*SCALE;
     const fy = 120*SCALE + Math.cos(Date.now()*0.003 + i*0.8)*60*SCALE;

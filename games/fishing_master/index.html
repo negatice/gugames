@@ -751,14 +751,18 @@ for(let f of fishes) {
   ctx.globalAlpha=hook.state==='stun'?0.6+Math.sin(Date.now()*0.02)*0.3:1;
   ctx.fillText('🪝', hook.x, hook.y); ctx.globalAlpha=1; ctx.textBaseline='alphabetic';
   // SESUDAH:
+  // SESUDAH — ukuran sama persis dengan render ikan normal:
   if(hook.caughtFish) {
     const cf = hook.caughtFish;
     const img = FISH_IMAGES[cf.type.imgKey];
-    const sz = Math.min(30, cf.type.size * 1.2) * SCALE;
-    if(img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, hook.x - sz/2, hook.y + 8*SCALE, sz, sz);
+    const sz = cf.type.size * SCALE * 2.5; // ← sama dengan render ikan di fishes loop
+    if(imagesReady && img) {
+      ctx.save();
+      ctx.translate(hook.x, hook.y + sz * 0.4);
+      ctx.drawImage(img, -sz/2, -sz/2, sz, sz);
+      ctx.restore();
     } else {
-      ctx.font = `${sz}px Arial`;
+      ctx.font = `${cf.type.size * SCALE}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(cf.type.emoji, hook.x, hook.y + 22*SCALE);

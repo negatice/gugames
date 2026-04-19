@@ -195,6 +195,8 @@ let ball = {
   trail: []
 };
 
+let shotResultProcessed = false;
+
 // --- Goalkeeper ---
 let keeper = {
   x: 0, y: 0, // position relative to goal center
@@ -294,9 +296,9 @@ function resetBall() {
 
 function resetKeeper() {
   keeper.x = W / 2;
-  keeper.y = goal.y + goal.h * 0.5;
+  keeper.y = goal.y + goal.h * 0.85;
   keeper.targetX = W / 2;
-  keeper.targetY = goal.y + goal.h * 0.5;
+  keeper.targetY = goal.y + goal.h * 0.85;
   keeper.diving = false;
   keeper.diveDir = 0;
   keeper.diveProgress = 0;
@@ -309,6 +311,13 @@ function resetKeeper() {
   const speeds = [0.015, 0.025, 0.04];
   keeper.reactionDelay = delays[difficulty];
   keeper.diveSpeed = speeds[difficulty];
+}
+
+function initGoal() {
+  goal.x = W / 2;
+  goal.y = H * 0.32;
+  goal.w = GOAL_WIDTH;
+  goal.h = GOAL_HEIGHT;
 }
 
 function startRound() {
@@ -428,6 +437,8 @@ function aiDecideShot() {
     keeper.readDelay = rand(15, 30);
     keeper.readBall = false;
   }
+
+  shotResultProcessed = false;
 }
 
 // ============================================================
@@ -502,6 +513,7 @@ function simulateAIShot() {
 
   // Reset keeper
   keeper.diveStarted = false;
+  shotResultProcessed = false;
 }
 
 // ============================================================
@@ -583,16 +595,17 @@ if (ball.active) {
   // Update keeper dive
   if (keeper.diving && keeper.diveStarted) {
     keeper.diveProgress = Math.min(keeper.diveProgress + keeper.diveSpeed, 1);
-    const diveTargetX = W / 2 + keeper.diveDir * GOAL_WIDTH * 0.35;
-    const diveTargetY = goal.y + goal.h * 0.5;
+    const diveTargetX = W / 2 + keeper.diveDir * GOAL_WIDTH * 0.4;
+    const diveTargetY = goal.y + goal.h * 0.85;
     keeper.x = lerp(W / 2, diveTargetX, keeper.diveProgress);
-    keeper.y = lerp(goal.y + goal.h * 0.5, diveTargetY, keeper.diveProgress);
+    keeper.y = lerp(goal.y + goal.h * 0.85, diveTargetY, keeper.diveProgress);
   }
 
   // Cek apakah bola sudah sampai gawang
-  if (ball.currentFrame >= ball.flightFrames) {
+  if (ball.currentFrame >= ball.flightFrames && !shotResultProcessed) {
+    shotResultProcessed = true;
     ball.active = false;
-    ball.x = ball.targetX;  // snap ke posisi akhir
+    ball.x = ball.targetX;
     ball.y = ball.targetY;
     checkShotResult();
   }
@@ -602,16 +615,16 @@ if (ball.active) {
   if (gameState === STATES.SHOOT_RESULT || gameState === STATES.SAVE_RESULT) {
     resultTimer++;
     if (resultTimer > 120) {
-      // Switch turn
-      if (isPlayerTurn) {
-        // Player finished shooting, now AI shoots
-        isPlayerTurn = false;
-      } else {
-        currentRound++;
-        isPlayerTurn = true;
-      }
-      startRound();
+    resultTimer = 0; // reset dulu agar tidak terpanggil 2x
+    gameState = STATES.SHOOTING; // temporary block
+    if (isPlayerTurn) {
+      isPlayerTurn = false;
+    } else {
+      currentRound++;
+      isPlayerTurn = true;
     }
+    startRound();
+  }
   }
 }
 
@@ -924,9 +937,6 @@ function drawBackground() {
 }
 
 function drawGoal() {
-  goal.x = W / 2;
-  goal.y = H * 0.32;
-
   // Goal back (net depth)
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fillRect(goal.x - goal.w / 2, goal.y, goal.w, goal.h);
@@ -2000,18 +2010,17 @@ function gameLoop(timestamp) {
   if (gameState === STATES.SHOOTING && !ball.active) {
     drawSwipePreview();
   }
-
+  goal.x = W / 2;
+  goal.y = H * 0.32; 
   requestAnimationFrame(gameLoop);
 }
 
 // ============================================================
 // INIT
 // ============================================================
-
 resize();
-window.addEventListener('resize', resize);
-goal.x = W / 2;
-goal.y = H * 0.32; 
+initGoal(); // ← tambahkan ini
+window.addEventListener('resize', () => { resize(); initGoal(); }); // update saat resize
 requestAnimationFrame(gameLoop);
 
 // Polyfill for roundRect

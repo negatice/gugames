@@ -697,14 +697,35 @@ function renderGame() {
 
   for(let o of obstacles) { if(!o.alive) continue; ctx.font=`${16*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(o.type.emoji,o.x,o.y); }
 
-  for(let f of fishes) {
-    if(!f.alive) continue;
-    ctx.save(); ctx.translate(f.x, f.y); if(f.vx>0) ctx.scale(-1,1); if(f.type.glow){ctx.shadowColor=f.type.color;ctx.shadowBlur=12;}
-    ctx.font=`${f.type.size*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(f.type.emoji, 0, 0); ctx.restore();
-    const barW=26*SCALE, barH=3.5*SCALE, bx=f.x-barW/2, by=f.y-f.type.size*SCALE-10, hpPct=f.currentHP/f.type.hp;
-    ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(bx-1,by-1,barW+2,barH+2);
-    ctx.fillStyle=hpPct>0.6?'#4CAF50':hpPct>0.3?'#FFC107':'#F44336'; ctx.fillRect(bx,by,barW*hpPct,barH);
+  // SESUDAH — pakai PNG:
+for(let f of fishes) {
+  if(!f.alive) continue;
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  if(f.vx > 0) ctx.scale(-1, 1);
+  
+  const img = FISH_IMAGES[f.type.imgKey];
+  const drawSize = f.type.size * SCALE * 2.5;
+  
+  if(f.type.glow) { ctx.shadowColor = f.type.color; ctx.shadowBlur = 12; }
+  
+  if(img && img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
+  } else {
+    ctx.font = `${f.type.size*SCALE}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(f.type.emoji, 0, 0);
   }
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // HP bar — tidak berubah
+  const barW=26*SCALE, barH=3.5*SCALE, bx=f.x-barW/2, by=f.y-f.type.size*SCALE-10, hpPct=f.currentHP/f.type.hp;
+  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(bx-1,by-1,barW+2,barH+2);
+  ctx.fillStyle=hpPct>0.6?'#4CAF50':hpPct>0.3?'#FFC107':'#F44336';
+  ctx.fillRect(bx, by, barW*hpPct, barH);
+}
 
   drawBoat(W/2, 40*SCALE);
 
@@ -718,7 +739,20 @@ function renderGame() {
   ctx.font=`${20*SCALE}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.globalAlpha=hook.state==='stun'?0.6+Math.sin(Date.now()*0.02)*0.3:1;
   ctx.fillText('🪝', hook.x, hook.y); ctx.globalAlpha=1; ctx.textBaseline='alphabetic';
-  if(hook.caughtFish){ ctx.font=`${Math.min(30,hook.caughtFish.type.size*1.2)*SCALE}px Arial`; ctx.fillText(hook.caughtFish.type.emoji, hook.x, hook.y+22*SCALE); }
+  // SESUDAH:
+  if(hook.caughtFish) {
+    const cf = hook.caughtFish;
+    const img = FISH_IMAGES[cf.type.imgKey];
+    const sz = Math.min(30, cf.type.size * 1.2) * SCALE;
+    if(img && img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, hook.x - sz/2, hook.y + 8*SCALE, sz, sz);
+    } else {
+      ctx.font = `${sz}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cf.type.emoji, hook.x, hook.y + 22*SCALE);
+    }
+  }
 
   for(let p of particles){ ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
   for(let t of floatingTexts){ ctx.globalAlpha=t.alpha; ctx.font=`bold ${13*SCALE}px Arial`; ctx.fillStyle=t.c; ctx.textAlign='center'; ctx.fillText(t.text,t.x,t.y); } ctx.globalAlpha=1;

@@ -358,47 +358,60 @@ function fireShot(startX, startY, endX, endY) {
   const dx = endX - startX;
   const dy = endY - startY;
   const distSwipe = Math.sqrt(dx * dx + dy * dy);
-  if (distSwipe < 20) return; // too short
+  if (distSwipe < 10) {
+    // Swipe terlalu pendek — default shoot ke atas tengah
+    endX = W / 2;
+    endY = startY - 80;
+  }
 
   playSound('kick');
   vibrate(30);
 
-  const angle = Math.atan2(dy, dx);
+  const angle = Math.atan2(endY - startY, endX - startX);
   const power = clamp(distSwipe / (H * 0.5), 0.3, 1.0);
 
-  // Calculate target position on goal plane
-  const goalTargetX = W / 2 + Math.cos(angle) * GOAL_WIDTH * 0.6 * power;
-  const goalTargetY = goal.y + goal.h * 0.2 + Math.abs(Math.sin(angle)) * GOAL_HEIGHT * 0.3 * (dy < 0 ? 1 : -0.5);
+  const goalTargetX = clamp(
+    W / 2 + Math.cos(angle) * GOAL_WIDTH * 0.6 * power,
+    goal.x - goal.w / 2 + 10,
+    goal.x + goal.w / 2 - 10
+  );
+  const goalTargetY = clamp(
+    goal.y + goal.h * 0.3 + Math.sin(angle) * GOAL_HEIGHT * 0.4,
+    goal.y + 5,
+    goal.y + goal.h - 5
+  );
 
   ball.x = W / 2;
   ball.y = H * 0.78;
   ball.z = 0;
 
-  const framesToGoal = 40 - power * 15; // more power = fewer frames
+  // Pastikan flightFrames tidak pernah 0 atau NaN
+  const rawFrames = 40 - power * 15;
+  ball.flightFrames = Math.max(10, Math.round(rawFrames));
+  ball.currentFrame = 0;
 
-  ball.vx = (goalTargetX - ball.x) / framesToGoal;
-  ball.vy = (goalTargetY - ball.y) / framesToGoal;
-  ball.vz = 1;
-  ball.spin = dx * 0.001; // curve from horizontal swipe component
+  ball.vx = (goalTargetX - ball.x) / ball.flightFrames;
+  ball.vy = (goalTargetY - ball.y) / ball.flightFrames;
+  ball.vz = 1 / ball.flightFrames;
+  ball.spin = dx * 0.0005;
   ball.power = power;
   ball.active = true;
   ball.targetX = goalTargetX;
   ball.targetY = goalTargetY;
   ball.trail = [];
-  ball.flightFrames = framesToGoal;
-  ball.currentFrame = 0;
+  ball.displayRadius = ball.radius;
 
   // Record player pattern
   const dir = goalTargetX < W / 2 - 30 ? -1 : goalTargetX > W / 2 + 30 ? 1 : 0;
   aiMemory[dir === -1 ? 'left' : dir === 1 ? 'right' : 'center']++;
   aiMemory.total++;
 
-  // Keeper reaction (with delay)
+  // Keeper reaction
   keeper.diveDir = dir;
   keeper.diving = true;
   keeper.diveProgress = 0;
+  keeper.diveStarted = false;
 
-  // In higher difficulties, keeper can read better
   if (difficulty >= 1 && Math.random() < 0.3 + difficulty * 0.15) {
     keeper.readDelay = rand(5, 15);
     keeper.readBall = true;
@@ -428,17 +441,15 @@ function playerDive(dir) {
 
 function simulateAIShot() {
   const dirs = [-1, 0, 1];
-
-  // AI reads player pattern
   let aiDir;
+
   if (aiMemory.total > 2 && difficulty >= 1) {
-    // AI biases toward player's common direction
     const weights = [aiMemory.left, aiMemory.center, aiMemory.right];
     const total = weights.reduce((a, b) => a + b, 0);
     const probs = weights.map(w => (w + 1) / (total + 3));
     const r = Math.random();
     let cum = 0;
-    aiDir = 1; // default right
+    aiDir = 1;
     for (let i = 0; i < 3; i++) {
       cum += probs[i];
       if (r < cum) { aiDir = dirs[i]; break; }
@@ -447,30 +458,41 @@ function simulateAIShot() {
     aiDir = dirs[randInt(0, 2)];
   }
 
-  const zones = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'];
-  const zone = zones[randInt(0, 4)];
-
   const power = rand(0.6, 1.0);
-  const goalTargetX = W / 2 + aiDir * GOAL_WIDTH * 0.3 * power;
-  const goalTargetY = goal.y + goal.h * 0.3 + rand(-20, 20);
+  const goalTargetX = clamp(
+    W / 2 + aiDir * GOAL_WIDTH * 0.3 * power,
+    goal.x - goal.w / 2 + 10,
+    goal.x + goal.w / 2 - 10
+  );
+  const goalTargetY = clamp(
+    goal.y + goal.h * 0.3 + rand(-20, 20),
+    goal.y + 5,
+    goal.y + goal.h - 5
+  );
 
   ball.x = W / 2;
   ball.y = H * 0.78;
   ball.z = 0;
 
-  const framesToGoal = 40 - power * 15;
-  ball.vx = (goalTargetX - ball.x) / framesToGoal;
-  ball.vy = (goalTargetY - ball.y) / framesToGoal;
-  ball.vz = 1;
+  // Pastikan flightFrames tidak pernah 0 atau NaN
+  const rawFrames = 40 - power * 15;
+  ball.flightFrames = Math.max(10, Math.round(rawFrames));
+  ball.currentFrame = 0;
+
+  ball.vx = (goalTargetX - ball.x) / ball.flightFrames;
+  ball.vy = (goalTargetY - ball.y) / ball.flightFrames;
+  ball.vz = 1 / ball.flightFrames;
   ball.spin = 0;
   ball.power = power;
   ball.active = true;
   ball.targetX = goalTargetX;
   ball.targetY = goalTargetY;
   ball.trail = [];
-  ball.flightFrames = framesToGoal;
-  ball.currentFrame = 0;
+  ball.displayRadius = ball.radius;
   ball.aiShotDir = aiDir;
+
+  // Reset keeper
+  keeper.diveStarted = false;
 }
 
 // ============================================================
@@ -522,55 +544,50 @@ function update() {
   }
 
   // Ball physics
-  if (ball.active) {
-    ball.currentFrame++;
+if (ball.active) {
+  ball.currentFrame++;
 
-    // Apply curve (spin)
-    ball.vx += ball.spin * 0.05;
+  ball.vx += ball.spin * 0.05;
+  ball.vy += 0.02 * (ball.power || 0.5);
 
-    // Apply gravity effect (slight downward curve)
-    ball.vy += 0.02 * ball.power;
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  ball.z += ball.vz;
+  ball.rotation += (ball.power || 0.5) * 0.3;
 
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-    ball.z += ball.vz;
-    ball.rotation += ball.power * 0.3;
+  // Perspective scale — pastikan tidak NaN
+  const perspectiveScale = Math.max(0.1, 1 - ball.z * 0.4);
+  ball.displayRadius = ball.radius * perspectiveScale;
 
-    // Scale ball based on z (perspective)
-    const perspectiveScale = 1 - ball.z * 0.4;
-    ball.displayRadius = ball.radius * perspectiveScale;
+  // Trail
+  ball.trail.push({ x: ball.x, y: ball.y, alpha: 1, radius: ball.displayRadius * 0.7 });
+  if (ball.trail.length > 15) ball.trail.shift();
+  for (let t of ball.trail) t.alpha *= 0.85;
 
-    // Trail
-    ball.trail.push({ x: ball.x, y: ball.y, alpha: 1, radius: ball.displayRadius * 0.7 });
-    if (ball.trail.length > 15) ball.trail.shift();
-    for (let t of ball.trail) t.alpha *= 0.85;
-
-    // Keeper AI reaction delay
-    if (keeper.readDelay > 0) {
-      keeper.readDelay--;
-    } else if (keeper.diving && !keeper.diveStarted) {
-      keeper.diveStarted = true;
-    }
-
-    // Update keeper dive
-    if (keeper.diving) {
-      if (keeper.diveStarted) {
-        keeper.diveProgress += keeper.diveSpeed;
-        keeper.diveProgress = Math.min(keeper.diveProgress, 1);
-
-        const diveTargetX = W / 2 + keeper.diveDir * GOAL_WIDTH * 0.35;
-        const diveTargetY = goal.y + goal.h * 0.5;
-        keeper.x = lerp(W / 2, diveTargetX, keeper.diveProgress);
-        keeper.y = lerp(goal.y + goal.h * 0.5, diveTargetY, keeper.diveProgress);
-      }
-    }
-
-    // Check if ball reached goal line
-    if (ball.currentFrame >= ball.flightFrames) {
-      ball.active = false;
-      checkShotResult();
-    }
+  // Keeper reaction delay
+  if (keeper.readDelay > 0) {
+    keeper.readDelay--;
+  } else if (keeper.diving && !keeper.diveStarted) {
+    keeper.diveStarted = true;
   }
+
+  // Update keeper dive
+  if (keeper.diving && keeper.diveStarted) {
+    keeper.diveProgress = Math.min(keeper.diveProgress + keeper.diveSpeed, 1);
+    const diveTargetX = W / 2 + keeper.diveDir * GOAL_WIDTH * 0.35;
+    const diveTargetY = goal.y + goal.h * 0.5;
+    keeper.x = lerp(W / 2, diveTargetX, keeper.diveProgress);
+    keeper.y = lerp(goal.y + goal.h * 0.5, diveTargetY, keeper.diveProgress);
+  }
+
+  // Cek apakah bola sudah sampai gawang
+  if (ball.currentFrame >= ball.flightFrames) {
+    ball.active = false;
+    ball.x = ball.targetX;  // snap ke posisi akhir
+    ball.y = ball.targetY;
+    checkShotResult();
+  }
+}
 
   // Result timer
   if (gameState === STATES.SHOOT_RESULT || gameState === STATES.SAVE_RESULT) {

@@ -20,6 +20,7 @@
             { id: 15, name: "Blackjack Mobile", category: "strategy", mode: "singleplayer", icon: "♠️", gradient: "linear-gradient(135deg, #10b981, #059669)", rating: 4.5, plays: "8.9K", badge: "new", desc: "Kejar angka 21 tidak lebih tidak kurang!", url: "games/blackjack_mobile/index.html", image: "assets/images/blackjack_mobile.jpeg" },
             { id: 16, name: "UNO Mobile", category: "strategy", mode: "singleplayer", icon: "🎴", gradient: "linear-gradient(135deg, #ec4899, #db2777)", rating: 4.6, plays: "12.4K", badge: "hot", desc: "Habiskan kartumu dan katakan UNO!", url: "games/uno_mobile/index.html", image: "assets/images/uno_mobile.jpeg" },
             { id: 17, name: "Sudoku Mobile", category: "strategy", mode: "singleplayer", icon: "2️⃣", gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", rating: 4.7, plays: "11.8K", badge: "popular", desc: "Selesaikan puzzle Sudoku! (1-9)", url: "games/sudoku_mobile/index.html", image: "assets/images/sudoku_mobile.jpeg" },
+            { id: 18, name: "2048", category: "strategy", mode: "singleplayer", icon: "2️⃣0️⃣4️⃣8️⃣", gradient: "linear-gradient(135deg, #f97316, #ea580c)", rating: 4.5, plays: "9.3K", badge: "new", desc: "Gabungkan angka-angka untuk mencapai 2048!", url: "games/2048_mobile/index.html", image: "assets/images/2048_mobile.jpeg" }
         ];
         // ============================================
         // STATE

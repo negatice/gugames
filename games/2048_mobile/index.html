@@ -711,6 +711,8 @@ class Game2048 {
     let totalMergeScore = 0;
     let mergeValues = [];
 
+    let totalMergeCount = 0; // ✅ tambahkan variabel ini
+
     for (let i = 0; i < 4; i++) {
       let line = this.getLine(i, direction);
       const result = this.processLine(line);
@@ -723,15 +725,14 @@ class Game2048 {
       }
       totalMergeScore += result.score;
       mergeValues.push(...result.mergeValues);
+      totalMergeCount += result.mergeCount || 0; // ✅ akumulasi di dalam loop
     }
-
-    if (!moved) return false;
 
     const prevScore = this.score;
     this.score += totalMergeScore;
     this.stats.totalScore += (this.score - prevScore);
     this.stats.totalMoves++;
-    this.stats.totalMerges += result.mergeCount || 0;
+    this.stats.totalMerges += totalMergeCount; // ✅ gunakan variabel yang benar
 
     const maxTile = this.getMaxTile();
     if (maxTile > this.stats.highestTile) this.stats.highestTile = maxTile;

@@ -19,6 +19,7 @@
             { id: 14, name: "Penalty Shootout", category: "strategy", mode: "singleplayer", icon: "⚽", gradient: "linear-gradient(135deg, #f59e0b, #d97706)", rating: 4.4, plays: "9.7K", badge: "new", desc: "Jadi penendang penalti terbaik!", url: "games/penalty_shootout/index.html", image: "assets/images/penalty_shootout.jpeg" },
             { id: 15, name: "Blackjack Mobile", category: "strategy", mode: "singleplayer", icon: "♠️", gradient: "linear-gradient(135deg, #10b981, #059669)", rating: 4.5, plays: "8.9K", badge: "new", desc: "Kejar angka 21 tidak lebih tidak kurang!", url: "games/blackjack_mobile/index.html", image: "assets/images/blackjack_mobile.jpeg" },
             { id: 16, name: "UNO Mobile", category: "strategy", mode: "singleplayer", icon: "🎴", gradient: "linear-gradient(135deg, #ec4899, #db2777)", rating: 4.6, plays: "12.4K", badge: "hot", desc: "Habiskan kartumu dan katakan UNO!", url: "games/uno_mobile/index.html", image: "assets/images/uno_mobile.jpeg" },
+            { id: 17, name: "Sudoku Mobile", category: "strategy", mode: "singleplayer", icon: "2️⃣", gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", rating: 4.7, plays: "11.8K", badge: "popular", desc: "Selesaikan puzzle Sudoku! (1-9)", url: "games/sudoku_mobile/index.html", image: "assets/images/sudoku_mobile.jpeg" },
         ];
         // ============================================
         // STATE

@@ -689,54 +689,51 @@ function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
 }
 
 // ---- Near Miss Detection ----
-function checkNearMiss(obs) {
+function checkNearMiss(obs, isStable) {
   if (obs.nearMissChecked || obs.passed) return;
-  const px = player.x, py = player.y;
-  const pw = player.width, ph = player.height;
-  const ox = obs.x, oy = obs.y;
-  const ow = obs.width, oh = obs.height;
 
-  // Check if obstacle is roughly at player's Y level
-  if (oy + oh > py && oy < py + ph) {
-    const dist = Math.abs((px + pw/2) - (ox + ow/2));
-    const threshold = (pw + ow) / 2 + 20; // slightly wider than collision
-    if (dist < threshold) {
-      // NEAR MISS!
-      obs.nearMissChecked = true;
-      obs.passed = true;
-      game.nearMissCount++;
-      game.score += 50 * (game.boostActive ? game.boostMultiplier : 1);
+  // Jangan trigger near miss jika player masih dalam proses pindah jalur
+  if (!isStable) return;
 
-      // Combo
-      const combo = game.nearMissCount;
-      if (combo > game.maxCombo) game.maxCombo = combo;
+  const pCx = player.x + player.width / 2;
+  const oCx = obs.x + obs.width / 2;
+  const distX = Math.abs(pCx - oCx);
 
-      // Show popup
-      showNearMissPopup();
+  // Threshold hitbox & near miss
+  const collisionThreshold = (player.width + obs.width) / 2 - 3;
+  const nearMissThreshold = collisionThreshold + 22;
 
-      // Glow effect
-      player.glowIntensity = 1;
+  // Trigger hanya jika jarak X masuk zona near miss (tidak terlalu dekat, tidak terlalu jauh)
+  if (distX >= collisionThreshold && distX <= nearMissThreshold) {
+    obs.nearMissChecked = true;
+    obs.passed = true;
+    game.nearMissCount++;
+    game.score += 50 * (game.boostActive ? game.boostMultiplier : 1);
 
-      // Screen shake
-      game.screenShake = 5;
+    // Combo tracking
+    if (game.nearMissCount > game.maxCombo) game.maxCombo = game.nearMissCount;
 
-      // Slow motion brief
-      game.slowMotion = true;
-      game.slowMotionTimer = 15;
+    // Efek visual & audio
+    showNearMissPopup();
+    player.glowIntensity = 1;
+    game.screenShake = 4;
+    game.slowMotion = true;
+    game.slowMotionTimer = 12;
 
-      // Particles
-      const midX = (px + pw/2 + ox + ow/2) / 2;
-      const midY = py;
-      spawnParticles(midX, midY, 8, '#ffd700', 2, 20);
+    const midX = (pCx + oCx) / 2;
+    spawnParticles(midX, player.y, 6, '#ffd700', 2, 18);
+    playNearMiss();
 
-      playNearMiss();
+    // Update combo UI
+    const comboEl = document.getElementById('combo-display');
+    comboEl.textContent = `🔥 ${game.nearMissCount}x COMBO`;
+    comboEl.style.opacity = '1';
+    setTimeout(() => { comboEl.style.opacity = '0'; }, 1200);
+  }
 
-      // Update combo display
-      const comboEl = document.getElementById('combo-display');
-      comboEl.textContent = `🔥 ${combo}x COMBO`;
-      comboEl.style.opacity = '1';
-      setTimeout(() => { comboEl.style.opacity = '0'; }, 1500);
-    }
+  // Tandai passed jika obstacle sudah sepenuhnya melewati player
+  if (obs.y > player.y + player.height + 15) {
+    obs.passed = true;
   }
 }
 
@@ -1192,18 +1189,24 @@ function update(dt) {
   }
 
   // Player lane switching
-  if (player.movingLane) {
-    const targetX = getLaneX(player.targetLane);
-    const dx = targetX - player.x;
-    if (Math.abs(dx) < 1) {
-      player.x = targetX;
-      player.lane = player.targetLane;
-      player.movingLane = false;
-    } else {
-      player.x += Math.sign(dx) * player.laneSwitchSpeed * dt;
-      player.x = Math.max(roadLeft + 5, Math.min(roadRight - player.width - 5, player.x));
+      // ✅ SMOOTH LANE SWITCHING (LERP) - Menghilangkan getar/jitter
+    if (player.movingLane) {
+      const targetX = getLaneX(player.targetLane);
+      const dx = targetX - player.x;
+      
+      // Exponential smoothing: konvergen halus tanpa overshoot
+      player.x += dx * 0.18 * dt;
+
+      // Clamp agar tidak keluar jalan
+      player.x = Math.max(roadLeft + 4, Math.min(roadRight - player.width - 4, player.x));
+
+      // Snap ke target saat sangat dekat
+      if (Math.abs(dx) < 0.5) {
+        player.x = targetX;
+        player.lane = player.targetLane;
+        player.movingLane = false;
+      }
     }
-  }
 
   // Player Y position
   player.y = H - player.height - 60;
@@ -1257,8 +1260,10 @@ function update(dt) {
     const relativeSpeed = moveSpeed - obs.speed;
     obs.y += relativeSpeed * dt;
 
+    const isStable = !player.movingLane;
+
     // Collision check
-    if (!game.invincible) {
+    if (isStable && !game.invincible) {
       if (rectsOverlap(player.x, player.y, player.width, player.height,
                         obs.x, obs.y, obs.width, obs.height)) {
         hitPlayer();
@@ -1267,9 +1272,9 @@ function update(dt) {
       }
     }
 
-    // Near miss check
-    if (!obs.nearMissChecked && obs.y > player.y) {
-      checkNearMiss(obs);
+    // Near Miss check (hanya saat vertikal overlap & posisi stabil)
+    if (obs.y > player.y - 30 && obs.y < player.y + player.height + 30) {
+      checkNearMiss(obs, isStable);
     }
 
     // Remove off-screen

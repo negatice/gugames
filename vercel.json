@@ -1,11 +1,12 @@
 {
+  "trailingSlash": false,
+  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/games/:path*",
+      "source": "/games/:path",
       "destination": "/games/:path/index.html"
     }
   ],
-  "cleanUrls": true,
   "headers": [
     {
       "source": "/(.*)",

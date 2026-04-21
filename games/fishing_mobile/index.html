@@ -122,6 +122,7 @@
   /* ===== BOTTOM BAR ===== */
 #bottom-bar {
   position: absolute;
+  margin-bottom: 40px;
   bottom: 0;
   left: 0;
   right: 0;
@@ -131,7 +132,7 @@
   justify-content: space-between;
   gap: 10px;
   /* Padding fleksibel + safe area untuk HP modern */
-  padding: 10px 14px max(12px, env(safe-area-inset-bottom, 12px));
+  padding: 10px 14px;
 }
 
   #fish-basket {
@@ -321,8 +322,9 @@
     align-items: center;
     justify-content: flex-end;
     z-index: 25;
+    margin-bottom: 20px;
     /* Padding responsif, tidak lagi fixed 110px */
-    padding: 12px 0 max(20px, env(safe-area-inset-bottom, 20px));
+    padding: 12px 0;
   }
 
   #skillbar-container { width: 85%; max-width: 340px; }
@@ -389,6 +391,7 @@
 
   #skillbar-btn {
     margin-top: 10px;
+    margin-bottom: 50px;
     width: 72px;
     height: 72px;
     border: none;
@@ -1909,69 +1912,54 @@ function drawRipples() {
 
 function drawFishingRod() {
   const t = performance.now() * 0.001;
-  
-  // Ambil posisi spot, jika null gunakan tengah layar (fallback)
   let bobX = selectedSpot ? selectedSpot.x : W * 0.5;
   let bobY = selectedSpot ? selectedSpot.y : H * 0.5;
 
-  // ===== STRIKE ANIMATION STATE =====
   let strikePhase = 0;
   let isStriking = (gameState === 'strike');
-  
   if (isStriking) {
-    // Hitung progress animasi strike (0 sampai 1 dalam 1200ms)
     strikePhase = Math.min((performance.now() - strikeAnimStart) / 1200, 1);
   }
 
-  // Efek tarikan ikan: sentakan cepat yang meredam (damped oscillation)
-  // Hanya aktif saat striking
   const pullY = isStriking ? Math.sin(strikePhase * Math.PI * 7) * Math.exp(-strikePhase * 4) * 14 : 0;
   const pullX = isStriking ? Math.sin(strikePhase * Math.PI * 3) * 6 : 0;
   
   bobX += pullX;
   bobY += pullY;
 
-  // Titik pangkal rod & reel
-  const rodBaseX = W * 0.65;
-  const rodBaseY = H * 0.98;
+  // ===== UBAH DI SINI: Naikkan posisi rod & reel =====
+  const rodBaseX = W * 0.72;    // Geser sedikit ke kanan agar lebih seimbang
+  const rodBaseY = H * 0.86;    // ✅ Naik dari 0.98 → 0.86 (12% dari bawah)
   const reelX = rodBaseX;
-  const reelY = H * 0.95;
+  const reelY = H * 0.88;       // ✅ Naik dari 0.95 → 0.82
 
-  // ===== ROD SHADOW =====
+  // Rod shadow
   ctx2d.save();
   ctx2d.globalAlpha = 0.25;
   ctx2d.beginPath();
   ctx2d.moveTo(rodBaseX, rodBaseY);
-  ctx2d.quadraticCurveTo(W * 0.55, H * 0.75, bobX, bobY);
+  ctx2d.quadraticCurveTo(W * 0.55, H * 0.68, bobX, bobY); // Control point disesuaikan
   ctx2d.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx2d.lineWidth = 6;
-  ctx2d.stroke();
+  ctx2d.lineWidth = 6; ctx2d.stroke();
   ctx2d.restore();
 
-  // ===== ROD LINE (DARK) =====
+  // Rod dark
   ctx2d.beginPath();
   ctx2d.moveTo(rodBaseX, rodBaseY);
-  // Control point bergeser sedikit saat strike (efek tegangan)
-  const ctrlX = W * 0.55 + pullX * 0.6;
-  const ctrlY = H * 0.75 + pullY * 0.4;
-  ctx2d.quadraticCurveTo(ctrlX, ctrlY, bobX, bobY);
+  ctx2d.quadraticCurveTo(W * 0.55, H * 0.68, bobX, bobY);
   ctx2d.strokeStyle = isStriking ? '#2a1a1a' : '#1a1a30';
-  ctx2d.lineWidth = isStriking ? 5 : 4;
-  ctx2d.stroke();
+  ctx2d.lineWidth = isStriking ? 5 : 4; ctx2d.stroke();
 
-  // ===== ROD LINE (HIGHLIGHT) =====
+  // Rod highlight
   ctx2d.beginPath();
   ctx2d.moveTo(rodBaseX, rodBaseY);
-  ctx2d.quadraticCurveTo(ctrlX, ctrlY, bobX, bobY);
-  ctx2d.strokeStyle = isStriking ? '#ff6644' : '#5a5a8e'; // Orange saat tegang
-  ctx2d.lineWidth = isStriking ? 3 : 2;
-  ctx2d.stroke();
+  ctx2d.quadraticCurveTo(W * 0.55, H * 0.68, bobX, bobY);
+  ctx2d.strokeStyle = isStriking ? '#ff6644' : '#5a5a8e';
+  ctx2d.lineWidth = isStriking ? 3 : 2; ctx2d.stroke();
 
-  // ===== FISHING LINE (KE PELAMPUNG) =====
-  // Getaran halus pelampung
+  // Line ke pelampung
   const bobberShakeX = isStriking ? Math.sin(t * 22) * 4 : Math.sin(t) * 3;
   const bobberShakeY = isStriking ? Math.cos(t * 28) * 2 : 0;
-  
   const lineEndX = bobX + bobberShakeX;
   const lineEndY = bobY + 18 + pullY * 0.6 + bobberShakeY;
 
@@ -1979,22 +1967,18 @@ function drawFishingRod() {
   ctx2d.moveTo(bobX, bobY);
   ctx2d.lineTo(lineEndX, lineEndY);
   ctx2d.strokeStyle = isStriking ? 'rgba(255,200,100,0.7)' : 'rgba(255,255,255,0.45)';
-  ctx2d.lineWidth = isStriking ? 1.5 : 1;
-  ctx2d.stroke();
+  ctx2d.lineWidth = isStriking ? 1.5 : 1; ctx2d.stroke();
 
-  // ===== WAVE EFFECT DURING STRIKE =====
+  // Wave effect during strike
   if (isStriking && strikePhase < 0.85) {
     const waveIntensity = (1 - strikePhase) * 0.9;
     for (let i = 0; i < 3; i++) {
       ctx2d.beginPath();
-      // Ellipsus yang membesar & memudar
       const radius = 12 + i * 10 + Math.sin(t * 8 + i) * 4;
       ctx2d.ellipse(lineEndX, lineEndY + 8, radius, radius * 0.35, 0, 0, Math.PI * 2);
       ctx2d.strokeStyle = `rgba(200, 230, 255, ${waveIntensity * (0.6 - i * 0.18)})`;
-      ctx2d.lineWidth = 2.5 - i * 0.5;
-      ctx2d.stroke();
+      ctx2d.lineWidth = 2.5 - i * 0.5; ctx2d.stroke();
     }
-    // Percikan kecil tambahan
     for (let i = 0; i < 4; i++) {
       const px = lineEndX + Math.sin(t * 12 + i * 2) * (8 + i * 3);
       const py = lineEndY - 5 - i * 4;
@@ -2005,78 +1989,53 @@ function drawFishingRod() {
     }
   }
 
-  // ===== BOBBER (AMPULAN) =====
+  // Bobber
   ctx2d.save();
-  
-  // FIX: Translate HARUS dilakukan SELALU, bukan hanya saat striking
-  // Ini memindahkan titik (0,0) canvas ke posisi pelampung
   ctx2d.translate(lineEndX, lineEndY);
-
-  if (isStriking) {
-    // Efek miring/rotasi hanya saat strike
-    ctx2d.rotate(Math.sin(t * 18) * 0.25 * (1 - strikePhase));
-  }
+  if (isStriking) ctx2d.rotate(Math.sin(t * 18) * 0.25 * (1 - strikePhase));
   
-  // Gambar pelampung di titik (0,0) lokal (yang sekarang sudah di posisi lineEndX, lineEndY)
   ctx2d.beginPath();
   ctx2d.arc(0, 0, 9, 0, Math.PI*2);
-  ctx2d.fillStyle = isStriking ? '#ff2222' : '#ff4444';
-  ctx2d.fill();
+  ctx2d.fillStyle = isStriking ? '#ff2222' : '#ff4444'; ctx2d.fill();
   
   ctx2d.beginPath();
   ctx2d.arc(0, -4, 4.5, 0, Math.PI*2);
-  ctx2d.fillStyle = '#fff';
-  ctx2d.fill();
+  ctx2d.fillStyle = '#fff'; ctx2d.fill();
   
-  // Ujung pelampung
   ctx2d.beginPath();
-  ctx2d.moveTo(-3, -8);
-  ctx2d.lineTo(0, -14);
-  ctx2d.lineTo(3, -8);
-  ctx2d.fillStyle = isStriking ? '#cc0000' : '#cc3333';
-  ctx2d.fill();
-  
-  ctx2d.restore(); // Kembalikan transformasi canvas ke normal
+  ctx2d.moveTo(-3, -8); ctx2d.lineTo(0, -14); ctx2d.lineTo(3, -8);
+  ctx2d.fillStyle = isStriking ? '#cc0000' : '#cc3333'; ctx2d.fill();
+  ctx2d.restore();
 
-  // ===== BOBBER RIPPLE (IDLE) =====
-  // Ripple digambar dengan koordinat absolut setelah restore()
+  // Bobber ripple (idle)
   if (!isStriking) {
     ctx2d.beginPath();
     ctx2d.ellipse(lineEndX, lineEndY + 22, 14 + Math.sin(t * 2) * 4, 5, 0, 0, Math.PI*2);
     ctx2d.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx2d.lineWidth = 1.5;
-    ctx2d.stroke();
+    ctx2d.lineWidth = 1.5; ctx2d.stroke();
   }
 
-  // ===== REEL =====
+  // Reel (otomatis naik mengikuti reelY baru)
   ctx2d.beginPath();
   ctx2d.arc(reelX, reelY, 20, 0, Math.PI*2);
-  ctx2d.fillStyle = '#3a3a5e';
-  ctx2d.fill();
-  ctx2d.strokeStyle = '#7a7aae';
-  ctx2d.lineWidth = 3;
-  ctx2d.stroke();
+  ctx2d.fillStyle = '#3a3a5e'; ctx2d.fill();
+  ctx2d.strokeStyle = '#7a7aae'; ctx2d.lineWidth = 3; ctx2d.stroke();
   
   ctx2d.beginPath();
   ctx2d.arc(reelX, reelY, 12, 0, Math.PI*2);
-  ctx2d.fillStyle = '#2a2a4e';
-  ctx2d.fill();
+  ctx2d.fillStyle = '#2a2a4e'; ctx2d.fill();
 
-  // Reel handle (sedikit bergetar saat strike)
+  // Reel handle
   const handleAngle = t * (isStriking ? 15 : 3) + (isStriking ? Math.sin(t * 30) * 0.3 : 0);
   ctx2d.save();
   ctx2d.translate(reelX, reelY);
   ctx2d.rotate(handleAngle);
   ctx2d.beginPath();
-  ctx2d.moveTo(0, 0);
-  ctx2d.lineTo(18, 0);
-  ctx2d.strokeStyle = '#aaa';
-  ctx2d.lineWidth = 3;
-  ctx2d.stroke();
+  ctx2d.moveTo(0, 0); ctx2d.lineTo(18, 0);
+  ctx2d.strokeStyle = '#aaa'; ctx2d.lineWidth = 3; ctx2d.stroke();
   ctx2d.beginPath();
   ctx2d.arc(20, 0, 5, 0, Math.PI*2);
-  ctx2d.fillStyle = '#666';
-  ctx2d.fill();
+  ctx2d.fillStyle = '#666'; ctx2d.fill();
   ctx2d.restore();
 }
 

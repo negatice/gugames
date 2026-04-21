@@ -28,6 +28,9 @@
   overflow: hidden;
   background: #0a1628;
   margin: 0 auto;
+  padding: 0;
+  overscroll-behavior: none; /* Mencegah scroll saat bermain */
+  touch-action: none;
 }
 
 /* ===== CANVAS ===== */
@@ -137,7 +140,7 @@
 
   #fish-basket {
   flex: none;
-  width: 140px; /* Sedikit lebih ramping agar muat di layar kecil */
+  width: 150px; /* Sedikit lebih ramping agar muat di layar kecil */
   background: linear-gradient(145deg, rgba(15, 50, 85, 0.92), rgba(8, 30, 55, 0.92));
   backdrop-filter: blur(12px);
   border-radius: 16px;
@@ -246,7 +249,7 @@
     color: rgba(255,255,255,0.95);
     font-size: 17px;
     font-weight: 800;
-    z-index: 8;
+    z-index: 99;
     text-align: center;
     pointer-events: none;
     text-shadow: 0 2px 12px rgba(0,0,0,0.6);

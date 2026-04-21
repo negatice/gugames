@@ -5,6 +5,7 @@
       "destination": "/games/:path/index.html"
     }
   ],
+  "trailingSlash": false,
   "cleanUrls": true,
   "headers": [
     {

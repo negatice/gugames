@@ -109,14 +109,14 @@ Promise.all(
 
 // --- FISH DEFINITIONS ---
 const FISH_TYPES = [
-  { name:'Ikan Normal',  imgKey:'ikan-normal1', emoji:'🐟', weight:50,   size:12, res:0.3, hp:8,  speed:40, pattern:'straight', minD:0,   color:'#B3E5FC' },
-  { name:'Ikan Kecil',   imgKey:'ikan-normal2', emoji:'🐠', weight:100,  size:12, res:0.5, hp:14, speed:55, pattern:'zigzag',   minD:10,  color:'#4FC3F7' },
-  { name:'Ikan Dori',    imgKey:'ikan-dori',    emoji:'🐟', weight:250,  size:14, res:0.8, hp:22, speed:45, pattern:'circle',   minD:40,  color:'#9C27B0' },
-  { name:'Ikan Buntal',  imgKey:'ikan-buntal',  emoji:'🐡', weight:500,  size:14, res:1.0, hp:30, speed:35, pattern:'straight', minD:80,  color:'#FF9800' },
-  { name:'Ikan Nemo',    imgKey:'ikan-nemo',    emoji:'🐠', weight:1000, size:14, res:1.3, hp:40, speed:70, pattern:'erratic',  minD:130, color:'#FF5722' },
-  { name:'Hiu',          imgKey:'hiu',          emoji:'🦈', weight:2000, size:40, res:1.7, hp:100, speed:60, pattern:'zigzag',   minD:180, color:'#607D8B' },
-  { name:'Paus',         imgKey:'paus',         emoji:'🐋', weight:5000, size:45, res:2.2, hp:100, speed:25, pattern:'straight', minD:260, color:'#1565C0' },
-  { name:'Ikan Tuna',    imgKey:'tuna',         emoji:'🐟', weight:3000, size:22, res:1.5, hp:90, speed:80, pattern:'erratic',  minD:300, color:'#FFD700', glow:true },
+  { name:'Ikan Normal',  imgKey:'ikan-normal1', emoji:'🐟', weight:50,   size:12, res:0.3, hp:80,  speed:40, pattern:'straight', minD:0,   color:'#B3E5FC' },
+  { name:'Ikan Kecil',   imgKey:'ikan-normal2', emoji:'🐠', weight:100,  size:12, res:0.5, hp:140, speed:55, pattern:'zigzag',   minD:10,  color:'#4FC3F7' },
+  { name:'Ikan Dori',    imgKey:'ikan-dori',    emoji:'🐟', weight:250,  size:14, res:0.8, hp:220, speed:45, pattern:'circle',   minD:40,  color:'#9C27B0' },
+  { name:'Ikan Buntal',  imgKey:'ikan-buntal',  emoji:'🐡', weight:500,  size:14, res:1.0, hp:300, speed:35, pattern:'straight', minD:80,  color:'#FF9800' },
+  { name:'Ikan Nemo',    imgKey:'ikan-nemo',    emoji:'🐠', weight:1000, size:14, res:1.3, hp:400, speed:40, pattern:'erratic',  minD:130, color:'#FF5722' },
+  { name:'Hiu',          imgKey:'hiu',          emoji:'🦈', weight:2000, size:50, res:1.7, hp:1000, speed:60, pattern:'zigzag',   minD:180, color:'#607D8B' },
+  { name:'Paus',         imgKey:'paus',         emoji:'🐋', weight:5000, size:85, res:2.2, hp:1000, speed:25, pattern:'straight', minD:260, color:'#1565C0' },
+  { name:'Ikan Tuna',    imgKey:'tuna',         emoji:'🐟', weight:3000, size:22, res:1.5, hp:900, speed:80, pattern:'erratic',  minD:300, color:'#FFD700', glow:true },
 ];
 const OBSTACLE_TYPES = [
   { name: 'Sampah', emoji: '🗑️', effect: 'fail' },

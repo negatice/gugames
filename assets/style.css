@@ -1174,3 +1174,33 @@ body.desktop-restricted .promo-banner {
         display: flex !important;
     }
 }
+
+/* ============================================
+   FOOTER / COPYRIGHT
+   ============================================ */
+.site-footer {
+    text-align: center;
+    padding: 20px 16px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    margin-top: 12px;
+}
+
+.footer-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+}
+
+.footer-text strong {
+    color: var(--text-secondary);
+    font-weight: 700;
+}
+
+.footer-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.6;
+}

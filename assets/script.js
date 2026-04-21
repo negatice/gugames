@@ -56,7 +56,7 @@
             { id: 20, name: "Flip Card", category: "strategy", mode: "singleplayer", icon: "🎴", gradient: "linear-gradient(135deg, #64748b, #475569)", rating: 4.6, plays: "10.2K", badge: "hot", desc: "Cocokkan pasangan kartu yang tersembunyi!", url: "games/flip_card/index.html", image: "assets/images/flip_card.jpeg" },
             { id: 21, name: "Pinball Mobile", category: "Arcade", mode: "singleplayer", icon: "💥", gradient: "linear-gradient(135deg, #22c55e, #16a34a)", rating: 4.7, plays: "14.8K", badge: "hot", desc: "Pantulkan bola dengan flipper!", url: "games/pinball_mobile/index.html", image: "assets/images/pinball_mobile.jpeg" },
             { id: 22, name: "Endless Traffic", category: "Arcade", mode: "singleplayer", icon: "🚗", gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", rating: 4.8, plays: "16.5K", badge: "New", desc: "Jadilah pengemudi yang handal!", url: "games/endless_traffic/index.html", image: "assets/images/endless_traffic.jpeg" },
-            { id: 23, name: "Solitaire Mobile", category: "Strategy", mode: "singleplayer", icon: "♣️", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.6, plays: "12.0K", badge: "New", desc: "Mainkan solitaire di perangkat mobile!", url: "games/solitaire_mobile/index.html", image: "assets/images/solitaire_mobile.jpeg" },
+            { id: 23, name: "Solitaire Mobile", category: "Strategy", mode: "singleplayer", icon: "♣️", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.6, plays: "12.0K", badge: "New", desc: "Mainkan solitaire di perangkat mobile!", url: "games/solitaire_mobile/", image: "assets/images/solitaire_mobile.jpeg" },
         ];
         // ============================================
         // STATE

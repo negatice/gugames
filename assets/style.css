@@ -1056,3 +1056,121 @@
 .promo-btn:active {
   transform: scale(0.95);
 }
+
+/* ============================================
+   DESKTOP BLOCK - MOBILE ONLY WARNING
+   ============================================ */
+.desktop-block {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0f0f2e 100%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.desktop-block.show {
+    display: flex;
+}
+
+.desktop-block-content {
+    max-width: 480px;
+    width: 100%;
+}
+
+.desktop-icon {
+    font-size: 80px;
+    margin-bottom: 24px;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-20px) rotate(-10deg); }
+    75% { transform: translateY(-10px) rotate(10deg); }
+}
+
+.desktop-title {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+}
+
+.desktop-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.desktop-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+}
+
+.desktop-devices {
+    font-size: 40px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.95); }
+}
+
+/* Hide main content on desktop */
+body.desktop-restricted .app-container,
+body.desktop-restricted .bg-effects,
+body.desktop-restricted .bg-grid,
+body.desktop-restricted .bottom-nav,
+body.desktop-restricted .toast,
+body.desktop-restricted .modal-overlay,
+body.desktop-restricted .promo-banner {
+    display: none !important;
+}
+
+/* Show on mobile only */
+/* Show on mobile only - FORCE HIDE desktop block */
+@media screen and (max-width: 768px) {
+    .desktop-block,
+    .desktop-block.show {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    body.desktop-restricted .app-container,
+    body.desktop-restricted .bg-effects,
+    body.desktop-restricted .bg-grid,
+    body.desktop-restricted .bottom-nav,
+    body.desktop-restricted .toast,
+    body.desktop-restricted .modal-overlay,
+    body.desktop-restricted .promo-banner {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Desktop only - show block */
+@media screen and (min-width: 769px) {
+    .desktop-block {
+        display: none;
+    }
+    
+    .desktop-block.show {
+        display: flex !important;
+    }
+}

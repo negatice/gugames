@@ -1,4 +1,35 @@
 // ============================================
+
+        // ============================================
+// DESKTOP BLOCK DETECTOR (FIXED)
+// ============================================
+(function() {
+    const desktopBlock = document.getElementById('desktopBlock');
+    if (!desktopBlock) return;
+
+    function checkDevice() {
+        const width = window.innerWidth;
+        
+        // Mobile: <= 768px
+        if (width <= 768) {
+            desktopBlock.classList.remove('show');
+            document.body.classList.remove('desktop-restricted');
+            document.body.style.overflow = '';
+        } 
+        // Desktop: > 768px
+        else {
+            desktopBlock.classList.add('show');
+            document.body.classList.add('desktop-restricted');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    // Check on load
+    checkDevice();
+
+    // Check on resize
+    window.addEventListener('resize', checkDevice);
+})();
         // GAME DATA - TAMBAH GAME KAMU DI SINI!
         // ============================================
         // Ganti 'url' dengan path ke file HTML game kamu

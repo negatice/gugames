@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🔍 Hidden Object Hunter</title>
+<title>Hidden Object Hunter</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
@@ -520,8 +520,8 @@
   <div class="upload-container">
     <div class="game-logo">
       <span class="logo-icon"></span>
-      <h1>Hidden Object</h1>
-      <p>Temukan ikon tersembunyi di fotomu!</p>
+      <h1>Find Bacteria</h1>
+      <p>Temukan bakteri tersembunyi di fotomu!</p>
     </div>
 
     <div class="upload-zone" id="uploadZone">
@@ -640,9 +640,9 @@ const HIDDEN_ICON = { emoji: '🦠' };
 // ✅ Ukuran tanpa blur, opacity seragam (cuma variasi ukuran yang jadi pembeda)
 const SIZE_MAP = {
   big:    { px: 48, opacity: 0.85 },
-  medium: { px: 26, opacity: 0.80 },
-  small:  { px: 16, opacity: 0.75 },
-  tiny:   { px: 10, opacity: 0.70 }
+  medium: { px: 26, opacity: 0.65 },
+  small:  { px: 16, opacity: 0.45 },
+  tiny:   { px: 10, opacity: 0.25 }
 };
 
 // ==================== PAGE NAVIGATION ====================
@@ -972,9 +972,9 @@ function showResult(isWin) {
   $('#statCombo').textContent = state.maxCombo > 1 ? `x${state.maxCombo}` : '-';
 
   const rb = $('#resultButtons'); rb.innerHTML = '';
-  if (isWin && state.currentLevel < 3) rb.innerHTML = `<button class="result-btn btn-home" onclick="goHome()">🏠 Home</button><button class="result-btn btn-next" onclick="nextLevel()">Next Level ➡️</button>`;
-  else if (isWin) rb.innerHTML = `<button class="result-btn btn-home" onclick="goHome()">🏠 Home</button><button class="result-btn btn-retry" onclick="retryGame()">Main Lagi</button>`;
-  else rb.innerHTML = `<button class="result-btn btn-home" onclick="goHome()">🏠 Home</button><button class="result-btn btn-retry" onclick="retryGame()">🔄 Retry</button>`;
+  if (isWin && state.currentLevel < 3) rb.innerHTML = `<button class="result-btn btn-home" onclick="goHome()">Home</button><button class="result-btn btn-next" onclick="nextLevel()">Next Level ➡️</button>`;
+  else if (isWin) rb.innerHTML = `<button class="result-btn btn-home" onclick="goHome()">Home</button><button class="result-btn btn-retry" onclick="retryGame()">Main Lagi</button>`;
+  else rb.innerHTML = `<button class="result-btn btn-home" onclick="goHome()">Home</button><button class="result-btn btn-retry" onclick="retryGame()">🔄 Retry</button>`;
   showPage(resultPage);
 }
 

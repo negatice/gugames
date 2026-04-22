@@ -363,48 +363,50 @@
 
 .image-overlay { display: none; } /* Tidak perlu overlay lagi */
 
-/* ✅ FIX 1: Hanya ukuran, tidak ada blur/opacity berlebihan */
+/* ✅ HITBOX TETAP 42x42px (nyaman di-jempol), VISUAL di-scale */
 .hidden-icon {
   position: absolute; z-index: 5; pointer-events: auto; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: transform 0.2s ease;
+  width: 42px; height: 42px;
 }
-.hidden-icon .icon-inner {
-  font-size: inherit; filter: drop-shadow(0 0 3px rgba(0,0,0,0.3));
-}
-.hidden-icon.size-big    { opacity: 0.85; }
-.hidden-icon.size-medium { opacity: 0.80; }
-.hidden-icon.size-small  { opacity: 0.75; }
-.hidden-icon.size-tiny   { opacity: 0.70; }
-.hidden-icon .icon-inner { filter: none !important; } /* Hapus blur */
 
+.hidden-icon .icon-inner {
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+
+/* Hanya mainkan scale & opacity untuk tingkat kesulitan */
+.hidden-icon.size-big .icon-inner    { transform: scale(1.35); opacity: 0.85; }
+.hidden-icon.size-medium .icon-inner { transform: scale(1.0);  opacity: 0.80; }
+.hidden-icon.size-small .icon-inner  { transform: scale(0.7);  opacity: 0.75; }
+.hidden-icon.size-tiny .icon-inner   { transform: scale(0.45); opacity: 0.70; }
+.hidden-icon .icon-inner { filter: none !important; }
+
+/* ✅ MARKER: Container tetap 42px, circle center absolut, icon ikut scale */
 .found-marker {
-  position: absolute;
-  z-index: 20;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Container tetap jadi bounding box persis ukuran icon */
+  position: absolute; z-index: 20; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .found-marker .marker-circle {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%); /* ✅ Center matematis absolut */
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   width: 135%; height: 135%;
-  border: 3px solid var(--success);
-  border-radius: 50%;
+  border: 3px solid var(--success); border-radius: 50%;
   animation: markerGlow 1s ease infinite alternate;
   box-shadow: 0 0 15px rgba(0,184,148,0.4), inset 0 0 15px rgba(0,184,148,0.08);
 }
 
 .found-marker .marker-icon {
-  position: relative; /* ✅ Ikut layout flexbox, tidak pakai transform static */
-  line-height: 1;
-  font-size: inherit;
+  position: relative; line-height: 1; font-size: 22px;
   animation: markerIconPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both;
 }
+
+/* Marker ikut scale sesuai icon yang ditemukan */
+.found-marker.size-big .marker-icon    { transform: scale(1.35); }
+.found-marker.size-medium .marker-icon { transform: scale(1.0); }
+.found-marker.size-small .marker-icon  { transform: scale(0.7); }
+.found-marker.size-tiny .marker-icon   { transform: scale(0.45); }
 
   @keyframes markerPop { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
   @keyframes markerGlow { from { box-shadow: 0 0 10px rgba(0,184,148,0.3), inset 0 0 10px rgba(0,184,148,0.05); } to { box-shadow: 0 0 25px rgba(0,184,148,0.6), inset 0 0 20px rgba(0,184,148,0.15); } }
@@ -630,10 +632,10 @@ const LEVEL_CONFIG = {
   2: { icons: 5, sizes: ['big','medium','medium','small','tiny'], time: 30, hints: 1 },
   3: { icons: 7, sizes: ['medium','medium','small','small','tiny','tiny','tiny'], time: 30, hints: 2 },
   4: { icons: 10, sizes: ['medium','medium','small','small','small','tiny','tiny','tiny','tiny','tiny'], time: 30, hints: 3 },
-  5: { icons: 15, sizes: ['medium','medium','small','small','small','small','tiny','tiny','tiny','tiny','tiny','tiny','tiny','tiny','tiny'], time: 30, hints: 4 }
+  5: { icons: 15, sizes: ['medium','medium','small','small','small','small','tiny','tiny','tiny','tiny','tiny','tiny','tiny','tiny','tiny'], time: 45, hints: 4 }
 };
 
-const HIDDEN_ICON = { emoji: '🐞' };
+const HIDDEN_ICON = { emoji: '🦠' };
 
 // ✅ Ukuran tanpa blur, opacity seragam (cuma variasi ukuran yang jadi pembeda)
 const SIZE_MAP = {
@@ -676,7 +678,7 @@ exampleBtn.addEventListener('click', () => {
   testImg.onload = () => { state.uploadedImage = examplePath; };
   testImg.onerror = () => {
     console.warn('assets/example.jpg tidak ditemukan. Gunakan placeholder.');
-    state.uploadedImage = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80';
+    state.uploadedImage = 'https://media.suara.com/pictures/653x366/2021/09/21/25209-ilustrasi-makanan-busuk.jpg';
     previewThumb.src = state.uploadedImage;
   };
   testImg.src = examplePath;
@@ -782,58 +784,51 @@ function generateIcons() {
   const config = LEVEL_CONFIG[state.currentLevel];
   const wrapper = imageWrapper;
   const wrapRect = wrapper.getBoundingClientRect();
-  
-  // Frame 1:1 langsung pakai width/height wrapper
-  const areaW = wrapRect.width;
-  const areaH = wrapRect.height;
-  const pad = 15; // Jarak aman dari tepi frame
+  const areaW = wrapRect.width, areaH = wrapRect.height;
+  const pad = 12, HITBOX = 42, minGap = 38;
   const positions = [];
-  const minGap = 45;
 
   for (let i = 0; i < config.icons; i++) {
     const size = config.sizes[i] || 'medium';
-    const s = SIZE_MAP[size];
     let attempts = 0, pos = null;
 
     while (attempts < 300) {
-      const x = pad + Math.random() * (areaW - s.px - pad * 2);
-      const y = pad + Math.random() * (areaH - s.px - pad * 2);
+      const x = pad + Math.random() * (areaW - HITBOX - pad * 2);
+      const y = pad + Math.random() * (areaH - HITBOX - pad * 2);
       const tooClose = positions.some(p => {
-        const dx = (x + s.px/2) - (p.x + p.size/2);
-        const dy = (y + s.px/2) - (p.y + p.size/2);
+        const dx = (x + HITBOX/2) - (p.x + HITBOX/2);
+        const dy = (y + HITBOX/2) - (p.y + HITBOX/2);
         return Math.sqrt(dx*dx + dy*dy) < minGap;
       });
-      if (!tooClose) { pos = { x, y, size: s.px }; break; }
+      if (!tooClose) { pos = { x, y }; break; }
       attempts++;
     }
-    if (!pos) pos = { x: areaW/2, y: areaH/2, size: s.px };
+    if (!pos) pos = { x: areaW/2 - HITBOX/2, y: areaH/2 - HITBOX/2 };
     positions.push(pos);
 
     const el = document.createElement('div');
     el.className = `hidden-icon size-${size}`;
-    el.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${s.px}px;height:${s.px}px;font-size:${s.px*0.65}px;opacity:${s.opacity};`;
+    el.style.left = `${pos.x}px`; el.style.top = `${pos.y}px`;
     el.innerHTML = `<span class="icon-inner">${HIDDEN_ICON.emoji}</span>`;
     el.dataset.index = i; el.dataset.size = size; el.dataset.found = 'false';
 
-    // ✅ Kirim koordinat & ukuran tepat ke handler
-    el.addEventListener('pointerdown', (e) => { 
-      e.stopPropagation(); handleIconTap(el, i, pos.x, pos.y, s.px); 
+    // ✅ Kirim koordinat & sizeClass
+    el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      handleIconTap(el, i, pos.x, pos.y, size);
     });
     wrapper.appendChild(el);
-    state.icons.push({ el, x: pos.x, y: pos.y, size: s.px, icon: HIDDEN_ICON, found: false, sizeClass: size });
+    state.icons.push({ el, x: pos.x, y: pos.y, sizeClass: size, icon: HIDDEN_ICON, found: false });
   }
-
   wrapper.addEventListener('pointerdown', handleWrongTap);
 }
 
 // ==================== TAP HANDLERS ====================
-function handleIconTap(el, index, x, y, size) {
+function handleIconTap(el, index, x, y, sizeClass) {
   if (!state.gameActive || el.dataset.found === 'true') return;
-  el.dataset.found = 'true';
-  el.style.display = 'none'; // Sembunyikan icon asli
+  el.dataset.found = 'true'; el.style.display = 'none';
   const iconData = state.icons[index]; iconData.found = true;
 
-  // Scoring
   const now = Date.now(); let timeBonus = 0;
   if (state.lastFoundTime > 0) {
     const diff = (now - state.lastFoundTime) / 1000;
@@ -843,12 +838,11 @@ function handleIconTap(el, index, x, y, size) {
   if (state.combo > state.maxCombo) state.maxCombo = state.combo;
 
   const sizeScores = { big: 50, medium: 80, small: 120, tiny: 200 };
-  state.score += (sizeScores[iconData.sizeClass] || 50) + timeBonus;
+  state.score += (sizeScores[sizeClass] || 50) + timeBonus;
 
-  // ✅ Marker muncul di posisi & ukuran EXACT sama
-  showFoundMarker(x, y, size, iconData.icon.emoji);
-  showFloatingScore(x, y, `+${sizeScores[iconData.sizeClass] || 50}${timeBonus ? ` 🔥x${state.combo}` : ''}`);
-  spawnParticles(x, y);
+  showFoundMarker(x, y, sizeClass, iconData.icon.emoji);
+  showFloatingScore(x, y, `+${sizeScores[sizeClass] || 50}${timeBonus ? ` 🔥x${state.combo}` : ''}`);
+  spawnParticles(x + 21, y + 21); // center hitbox
   state.foundIcons++; updateUI();
 
   setTimeout(() => { if (state.foundIcons >= state.totalIcons) winGame(); }, 300);
@@ -870,14 +864,11 @@ function handleWrongTap(e) {
 }
 
 // ==================== VISUAL EFFECTS ====================
-function showFoundMarker(x, y, size, emoji) {
-  // ✅ Hitung font-size pixel persis sama dengan icon asli (size * 0.65)
-  const fontSize = Math.round(size * 0.65);
+function showFoundMarker(x, y, sizeClass, emoji) {
   const marker = document.createElement('div');
-  marker.className = 'found-marker';
-  
-  // ✅ Terapkan width, height & font-size inline agar identik 100%
-  marker.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;font-size:${fontSize}px;`;
+  marker.className = `found-marker size-${sizeClass}`;
+  marker.style.left = `${x}px`; marker.style.top = `${y}px`;
+  marker.style.width = `42px`; marker.style.height = `42px`;
   marker.innerHTML = `<div class="marker-circle"></div><span class="marker-icon">${emoji}</span>`;
   imageWrapper.appendChild(marker);
 }

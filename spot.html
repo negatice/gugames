@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spot The Difference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :root {
+    --primary: #6C5CE7;
+    --primary-light: #A29BFE;
+    --secondary: #00CEC9;
+    --accent: #FD79A8;
+    --danger: #E17055;
+    --success: #00B894;
+    --warning: #FDCB6E;
+    --dark: #2D3436;
+    --light: #DFE6E9;
+    --white: #FFFFFF;
+    --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 8px 32px rgba(108, 92, 231, 0.2);
+    --soft-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    position: relative;
+    color: var(--dark);
+  }
+
+  .page {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .page.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+    z-index: 10;
+  }
+
+  /* ===== MENU PAGE ===== */
+  #menuPage {
+    background: var(--bg-gradient);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .menu-title {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .menu-title h1 {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--white);
+    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    letter-spacing: -0.5px;
+  }
+
+  .menu-title .subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 600;
+  }
+
+  .menu-icon {
+    font-size: 60px;
+    margin-bottom: 10px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 10px;
+    max-width: 340px;
+    width: 100%;
+    max-height: 55vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .level-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 14px 8px;
+    text-align: center;
+    box-shadow: var(--soft-shadow);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .level-card:active {
+    transform: scale(0.93);
+  }
+
+  .level-card.locked {
+    opacity: 0.5;
+    background: #f0f0f0;
+  }
+
+  .level-card .level-num {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--primary);
+  }
+
+  .level-card .level-theme {
+    font-size: 22px;
+    margin: 4px 0;
+  }
+
+  .level-card .level-diff {
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+  }
+
+  .level-card .lock-icon {
+    font-size: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.5);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+  }
+
+  .level-card.completed::after {
+    content: '⭐';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 14px;
+  }
+
+  .best-score {
+    font-size: 10px;
+    color: var(--success);
+    font-weight: 700;
+  }
+
+  .menu-footer {
+    margin-top: auto;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .menu-footer p {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* ===== GAME PAGE ===== */
+  #gamePage {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  }
+
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .lives-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 20px;
+  }
+
+  .heart {
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 4px rgba(255,0,0,0.4));
+  }
+
+  .heart.lost {
+    filter: grayscale(1) opacity(0.3);
+    transform: scale(0.8);
+  }
+
+  .timer-display {
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 6px 16px;
+    color: var(--white);
+    font-weight: 800;
+    font-size: 18px;
+    min-width: 70px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .timer-display.warning {
+    background: rgba(225, 112, 85, 0.4);
+    animation: timerPulse 0.5s ease-in-out infinite;
+  }
+
+  @keyframes timerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  .exit-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: var(--white);
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .exit-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.25);
+  }
+
+  .game-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .image-label {
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .image-container {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    flex: 1;
+    min-height: 0;
+    touch-action: none;
+  }
+
+  .image-container canvas {
+    width: 100%;
+    height: 80%;
+    display: block;
+    object-fit: contain;
+  }
+
+  .images-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .images-wrapper .image-container {
+    flex: 1;
+  }
+
+  .game-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px 16px;
+    gap: 12px;
+  }
+
+  .progress-bar-container {
+    flex: 1;
+    height: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary), var(--success));
+    border-radius: 10px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  .progress-text {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .hint-btn {
+    background: linear-gradient(135deg, var(--warning), #f39c12);
+    border: none;
+    color: var(--dark);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(253, 203, 110, 0.4);
+    white-space: nowrap;
+  }
+
+  .hint-btn:active {
+    transform: scale(0.93);
+  }
+
+  .hint-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .hint-btn .hint-count {
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 2px 6px;
+    margin-left: 4px;
+    font-size: 11px;
+  }
+
+  /* Hitbox overlay */
+  .hitbox-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+  }
+
+  /* Found marker */
+  .found-marker {
+    position: absolute;
+    border: 3px solid var(--success);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 6;
+    animation: markerAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 20px rgba(0, 184, 148, 0.6), inset 0 0 10px rgba(0, 184, 148, 0.2);
+  }
+
+  @keyframes markerAppear {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.3); }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+
+  .found-marker::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--success);
+    font-weight: 900;
+    font-size: 16px;
+    text-shadow: 0 0 10px rgba(0, 184, 148, 0.8);
+  }
+
+  /* Shake animation */
+  .shake {
+    animation: shake 0.4s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
+  /* Hint pulse */
+  .hint-pulse {
+    position: absolute;
+    border: 3px solid var(--warning);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 7;
+    animation: hintPulse 1.5s ease-in-out 3;
+    box-shadow: 0 0 20px rgba(253, 203, 110, 0.6);
+  }
+
+  @keyframes hintPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    50% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.5; }
+  }
+
+  /* Wrong tap effect */
+  .wrong-tap {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--danger);
+    pointer-events: none;
+    z-index: 6;
+    animation: wrongTap 0.5s ease-out forwards;
+  }
+
+  @keyframes wrongTap {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+  }
+
+  /* Combo text */
+  .combo-text {
+    position: absolute;
+    z-index: 20;
+    font-weight: 900;
+    font-size: 20px;
+    pointer-events: none;
+    animation: comboFloat 1s ease-out forwards;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+
+  @keyframes comboFloat {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    30% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -120%) scale(1); opacity: 0; }
+  }
+
+  /* ===== RESULT PAGE ===== */
+  #resultPage {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  .result-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 30px 24px;
+    text-align: center;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: var(--card-shadow);
+    animation: resultSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes resultSlideIn {
+    0% { transform: translateY(40px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  .result-icon {
+    font-size: 64px;
+    margin-bottom: 10px;
+  }
+
+  .result-title {
+    font-size: 24px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+
+  .result-title.win { color: var(--success); }
+  .result-title.lose { color: var(--danger); }
+
+  .result-subtitle {
+    font-size: 14px;
+    color: #999;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+
+  .result-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-box {
+    background: #f8f9fa;
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  .stat-box .stat-label {
+    font-size: 11px;
+    color: #999;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-box .stat-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--primary);
+  }
+
+  .result-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn:active {
+    transform: scale(0.95);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: var(--white);
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.4);
+  }
+
+  .btn-secondary {
+    background: #f0f0f0;
+    color: var(--dark);
+  }
+
+  /* ===== CONFETTI ===== */
+  #confettiCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal-box {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    max-width: 280px;
+    width: 100%;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+  }
+
+  .modal-overlay.show .modal-box {
+    transform: scale(1);
+  }
+
+  .modal-box h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .modal-box p {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  /* Score popup */
+  .score-popup {
+    position: absolute;
+    z-index: 20;
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--success);
+    pointer-events: none;
+    animation: scoreFloat 0.8s ease-out forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  @keyframes scoreFloat {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    30% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -100%) scale(0.8); opacity: 0; }
+  }
+
+  /* Level transition */
+  .level-transition {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: var(--bg-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  .level-transition.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .level-transition-text {
+    color: var(--white);
+    font-size: 32px;
+    font-weight: 900;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: levelTextPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes levelTextPop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Stars on result */
+  .stars-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .star {
+    font-size: 36px;
+    opacity: 0;
+    animation: starPop 0.4s ease forwards;
+  }
+
+  .star:nth-child(1) { animation-delay: 0.2s; }
+  .star:nth-child(2) { animation-delay: 0.4s; }
+  .star:nth-child(3) { animation-delay: 0.6s; }
+
+  @keyframes starPop {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .star.empty {
+    filter: grayscale(1);
+    opacity: 0.3 !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== MENU PAGE ===== -->
+<div id="menuPage" class="page active">
+  <div class="menu-icon">🔍</div>
+  <div class="menu-title">
+    <h1>Spot The Difference</h1>
+    <div class="subtitle">Temukan semua perbedaan!</div>
+  </div>
+  <div class="level-grid" id="levelGrid"></div>
+  <div class="menu-footer">
+    <p>Sentuh level untuk memulai</p>
+  </div>
+</div>
+
+<!-- ===== GAME PAGE ===== -->
+<div id="gamePage" class="page">
+  <div class="game-header">
+    <div class="lives-container" id="livesContainer"></div>
+    <div class="timer-display" id="timerDisplay">60</div>
+    <button class="exit-btn" id="exitBtn">✕</button>
+  </div>
+  <div class="game-body">
+    <div class="images-wrapper">
+      <div>
+        <div class="image-container" id="imageContainer1">
+          <canvas id="canvas1"></canvas>
+          <div class="hitbox-overlay" id="hitbox1"></div>
+        </div>
+      </div>
+      <div>
+        <div class="image-container" id="imageContainer2">
+          <canvas id="canvas2"></canvas>
+          <div class="hitbox-overlay" id="hitbox2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="game-footer">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <span class="progress-text" id="progressText">0/5</span>
+    <button class="hint-btn" id="hintBtn">💡 Hint <span class="hint-count" id="hintCount">3</span></button>
+  </div>
+</div>
+
+<!-- ===== RESULT PAGE ===== -->
+<div id="resultPage" class="page">
+  <div class="result-card">
+    <div class="result-icon" id="resultIcon">🎉</div>
+    <div class="stars-container" id="starsContainer"></div>
+    <div class="result-title" id="resultTitle">Level Complete!</div>
+    <div class="result-subtitle" id="resultSubtitle">Kamu menemukan semua perbedaan!</div>
+    <div class="result-stats">
+      <div class="stat-box">
+        <div class="stat-label">Waktu</div>
+        <div class="stat-value" id="resultTime">32s</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Skor</div>
+        <div class="stat-value" id="resultScore">1200</div>
+      </div>
+    </div>
+    <div class="result-buttons">
+      <button class="btn btn-secondary" id="resultMenuBtn">Menu</button>
+      <button class="btn btn-primary" id="resultNextBtn">Lanjut</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QUIT MODAL ===== -->
+<div class="modal-overlay" id="quitModal">
+  <div class="modal-box">
+    <h3>🚪 Keluar?</h3>
+    <p>Progress level ini akan hilang. Yakin mau keluar?</p>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" id="cancelQuit">Lanjut Main</button>
+      <button class="btn btn-primary" id="confirmQuit">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LEVEL TRANSITION ===== -->
+<div class="level-transition" id="levelTransition">
+  <div class="level-transition-text" id="levelTransitionText">Level 1</div>
+</div>
+
+<!-- ===== CONFETTI ===== -->
+<canvas id="confettiCanvas"></canvas>
+
+<script>
+// ===========================
+// AUDIO SYSTEM (Web Audio API)
+// ===========================
+class AudioSystem {
+  constructor() {
+    this.ctx = null;
+    this.initialized = false;
+  }
+
+  init() {
+    if (this.initialized) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.initialized = true;
+    } catch(e) {}
+  }
+
+  play(type) {
+    if (!this.initialized || !this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      switch(type) {
+        case 'correct': this._playCorrect(now); break;
+        case 'wrong': this._playWrong(now); break;
+        case 'win': this._playWin(now); break;
+        case 'lose': this._playLose(now); break;
+        case 'hint': this._playHint(now); break;
+        case 'combo': this._playCombo(now); break;
+        case 'tick': this._playTick(now); break;
+      }
+    } catch(e) {}
+  }
+
+  _osc(freq, type, start, dur, vol = 0.15) {
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    o.connect(g).connect(this.ctx.destination);
+    o.start(start);
+    o.stop(start + dur);
+  }
+
+  _playCorrect(t) {
+    this._osc(523, 'sine', t, 0.12, 0.12);
+    this._osc(659, 'sine', t + 0.06, 0.12, 0.12);
+    this._osc(784, 'sine', t + 0.12, 0.18, 0.12);
+  }
+
+  _playWrong(t) {
+    this._osc(200, 'square', t, 0.2, 0.08);
+    this._osc(150, 'square', t + 0.1, 0.2, 0.08);
+  }
+
+  _playWin(t) {
+    [523, 587, 659, 784, 880, 1047].forEach((f, i) => {
+      this._osc(f, 'sine', t + i * 0.08, 0.25, 0.1);
+    });
+  }
+
+  _playLose(t) {
+    [400, 350, 300, 250].forEach((f, i) => {
+      this._osc(f, 'sawtooth', t + i * 0.15, 0.3, 0.06);
+    });
+  }
+
+  _playHint(t) {
+    this._osc(880, 'sine', t, 0.1, 0.08);
+    this._osc(1100, 'sine', t + 0.08, 0.15, 0.08);
+  }
+
+  _playCombo(t) {
+    this._osc(600, 'sine', t, 0.08, 0.1);
+    this._osc(800, 'sine', t + 0.05, 0.08, 0.1);
+    this._osc(1000, 'sine', t + 0.1, 0.15, 0.1);
+  }
+
+  _playTick(t) {
+    this._osc(1000, 'sine', t, 0.05, 0.03);
+  }
+}
+
+const audio = new AudioSystem();
+
+// ===========================
+// SCENE DRAWING SYSTEM
+// ===========================
+class SceneDrawer {
+  constructor() {
+    this.canvasW = 400;
+    this.canvasH = 300;
+  }
+
+  drawScene(canvas, sceneId, isModified = false, differences = []) {
+    const ctx = canvas.getContext('2d');
+    canvas.width = this.canvasW;
+    canvas.height = this.canvasH;
+    ctx.clearRect(0, 0, this.canvasW, this.canvasH);
+
+    const drawFn = this.scenes[sceneId];
+    if (drawFn) {
+      drawFn.call(this, ctx, isModified, differences);
+    }
+  }
+
+  // Helper methods
+  _sky(ctx, topColor, bottomColor) {
+    const grad = ctx.createLinearGradient(0, 0, 0, this.canvasH * 0.6);
+    grad.addColorStop(0, topColor);
+    grad.addColorStop(1, bottomColor);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, this.canvasW, this.canvasH * 0.6);
+  }
+
+  _ground(ctx, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, this.canvasH * 0.6, this.canvasW, this.canvasH * 0.4);
+  }
+
+  _sun(ctx, x, y, r, color = '#FFD93D') {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    // Glow
+    ctx.beginPath();
+    ctx.arc(x, y, r + 10, 0, Math.PI * 2);
+    ctx.fillStyle = color + '33';
+    ctx.fill();
+  }
+
+  _cloud(ctx, x, y, s = 1) {
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(x, y, 20 * s, 0, Math.PI * 2);
+    ctx.arc(x + 20 * s, y - 10 * s, 25 * s, 0, Math.PI * 2);
+    ctx.arc(x + 45 * s, y, 20 * s, 0, Math.PI * 2);
+    ctx.arc(x + 22 * s, y + 5 * s, 18 * s, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  _tree(ctx, x, y, trunkH = 60, trunkW = 14, canopyR = 30, canopyColor = '#27AE60', trunkColor = '#8B6914') {
+    // Trunk
+    ctx.fillStyle = trunkColor;
+    ctx.fillRect(x - trunkW/2, y - trunkH, trunkW, trunkH);
+    // Canopy
+    ctx.beginPath();
+    ctx.arc(x, y - trunkH - 5, canopyR, 0, Math.PI * 2);
+    ctx.fillStyle = canopyColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - 12, y - trunkH + 8, canopyR * 0.75, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + 12, y - trunkH + 8, canopyR * 0.75, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  _house(ctx, x, y, w = 50, h = 40, roofColor = '#E74C3C', wallColor = '#FDEBD0') {
+    // Wall
+    ctx.fillStyle = wallColor;
+    ctx.fillRect(x, y - h, w, h);
+    // Roof
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y - h);
+    ctx.lineTo(x + w/2, y - h - 25);
+    ctx.lineTo(x + w + 8, y - h);
+    ctx.fillStyle = roofColor;
+    ctx.fill();
+    // Door
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(x + w/2 - 6, y - 18, 12, 18);
+    // Window
+    ctx.fillStyle = '#85C1E9';
+    ctx.fillRect(x + 6, y - h + 8, 12, 12);
+    ctx.fillRect(x + w - 18, y - h + 8, 12, 12);
+  }
+
+  _flower(ctx, x, y, petalColor = '#E91E63', stemH = 20) {
+    // Stem
+    ctx.strokeStyle = '#27AE60';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y - stemH);
+    ctx.stroke();
+    // Petals
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(angle) * 5, y - stemH + Math.sin(angle) * 5, 4, 0, Math.PI * 2);
+      ctx.fillStyle = petalColor;
+      ctx.fill();
+    }
+    // Center
+    ctx.beginPath();
+    ctx.arc(x, y - stemH, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFD700';
+    ctx.fill();
+  }
+
+  _bird(ctx, x, y, s = 1) {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.moveTo(x - 10 * s, y);
+    ctx.quadraticCurveTo(x - 5 * s, y - 8 * s, x, y);
+    ctx.quadraticCurveTo(x + 5 * s, y - 8 * s, x + 10 * s, y);
+    ctx.stroke();
+  }
+
+  _mountain(ctx, x, baseY, w, h, color = '#5D6D7E') {
+    ctx.beginPath();
+    ctx.moveTo(x - w/2, baseY);
+    ctx.lineTo(x, baseY - h);
+    ctx.lineTo(x + w/2, baseY);
+    ctx.fillStyle = color;
+    ctx.fill();
+    // Snow cap
+    if (h > 60) {
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.12, baseY - h + h * 0.15);
+      ctx.lineTo(x, baseY - h);
+      ctx.lineTo(x + w * 0.12, baseY - h + h * 0.15);
+      ctx.fillStyle = '#FFF';
+      ctx.fill();
+    }
+  }
+
+  _water(ctx, x, y, w, h) {
+    const grad = ctx.createLinearGradient(x, y, x, y + h);
+    grad.addColorStop(0, '#3498DB');
+    grad.addColorStop(1, '#2980B9');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+    // Waves
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      for (let px = x; px < x + w; px += 5) {
+        ctx.lineTo(px, y + 10 + i * 15 + Math.sin(px * 0.05 + i) * 4);
+      }
+      ctx.stroke();
+    }
+  }
+
+  _star(ctx, x, y, r = 2) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFF';
+    ctx.fill();
+  }
+
+  _fence(ctx, x, y, posts = 5, spacing = 20) {
+    ctx.fillStyle = '#D4A76A';
+    for (let i = 0; i < posts; i++) {
+      ctx.fillRect(x + i * spacing, y - 25, 4, 25);
+    }
+    ctx.fillRect(x, y - 20, posts * spacing, 3);
+    ctx.fillRect(x, y - 10, posts * spacing, 3);
+  }
+
+  _car(ctx, x, y, color = '#E74C3C') {
+    // Body
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x, y - 15, 50, 18, 4);
+    ctx.fill();
+    // Top
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x + 10, y - 28, 28, 13, [4, 4, 0, 0]);
+    ctx.fill();
+    // Windows
+    ctx.fillStyle = '#85C1E9';
+    ctx.fillRect(x + 13, y - 26, 10, 9);
+    ctx.fillRect(x + 25, y - 26, 10, 9);
+    // Wheels
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.arc(x + 12, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + 40, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  _butterfly(ctx, x, y, color1 = '#FF6B6B', color2 = '#FFA07A') {
+    // Wings
+    ctx.fillStyle = color1;
+    ctx.beginPath();
+    ctx.ellipse(x - 8, y - 2, 10, 7, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = color2;
+    ctx.beginPath();
+    ctx.ellipse(x + 8, y - 2, 10, 7, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    // Body
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 2, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Antennae
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - 1, y - 5);
+    ctx.lineTo(x - 5, y - 12);
+    ctx.moveTo(x + 1, y - 5);
+    ctx.lineTo(x + 5, y - 12);
+    ctx.stroke();
+  }
+
+  _fish(ctx, x, y, color = '#3498DB') {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 12, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Tail
+    ctx.beginPath();
+    ctx.moveTo(x - 12, y);
+    ctx.lineTo(x - 20, y - 8);
+    ctx.lineTo(x - 20, y + 8);
+    ctx.closePath();
+    ctx.fill();
+    // Eye
+    ctx.fillStyle = '#FFF';
+    ctx.beginPath();
+    ctx.arc(x + 5, y - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.arc(x + 6, y - 2, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  _boat(ctx, x, y) {
+    // Hull
+    ctx.fillStyle = '#8B4513';
+    ctx.beginPath();
+    ctx.moveTo(x - 20, y);
+    ctx.lineTo(x - 25, y + 12);
+    ctx.lineTo(x + 25, y + 12);
+    ctx.lineTo(x + 20, y);
+    ctx.closePath();
+    ctx.fill();
+    // Mast
+    ctx.fillStyle = '#D4A76A';
+    ctx.fillRect(x - 2, y - 35, 4, 35);
+    // Sail
+    ctx.fillStyle = '#FFF';
+    ctx.beginPath();
+    ctx.moveTo(x + 2, y - 33);
+    ctx.lineTo(x + 18, y - 10);
+    ctx.lineTo(x + 2, y - 10);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // ===== SCENE DEFINITIONS =====
+  scenes = {
+    // ===== LEVEL 1: Garden =====
+    'garden': function(ctx, isModified, differences) {
+      const skyTop = isModified && differences.includes(0) ? '#FF8C42' : '#87CEEB';
+      ctx.fillStyle = skyTop;
+      ctx.fillRect(0, 0, this.canvasW, this.canvasH * 0.55);
+      
+      // Sun
+      const sunColor = isModified && differences.includes(1) ? '#FF6B6B' : '#FFD93D';
+      this._sun(ctx, 320, 50, 30, sunColor);
+
+      // Clouds
+      this._cloud(ctx, 60, 40, 1);
+      this._cloud(ctx, 180, 60, 0.7);
+      if (!isModified || !differences.includes(2)) {
+        this._cloud(ctx, 280, 35, 0.8);
+      }
+
+      // Mountains
+      this._mountain(ctx, 80, this.canvasH * 0.55, 160, 70, '#7F8C8D');
+      this._mountain(ctx, 280, this.canvasH * 0.55, 140, 55, '#95A5A6');
+
+      // Ground
+      this._ground(ctx, isModified && differences.includes(3) ? '#C0392B' : '#2ECC71');
+
+      // Fence
+      this._fence(ctx, 20, this.canvasH * 0.58, 6, 25);
+
+      // Flowers
+      const flowerPositions = [
+        { x: 80, y: this.canvasH * 0.85 },
+        { x: 140, y: this.canvasH * 0.78 },
+        { x: 200, y: this.canvasH * 0.88 },
+        { x: 260, y: this.canvasH * 0.82 },
+        { x: 330, y: this.canvasH * 0.75 },
+      ];
+      flowerPositions.forEach((fp, i) => {
+        if (!isModified || !differences.includes(4) || i !== 2) {
+          this._flower(ctx, fp.x, fp.y, ['#E91E63', '#9B59B6', '#E74C3C', '#F39C12', '#3498DB'][i]);
+        }
+      });
+
+      // Tree
+      const treeColor = isModified && differences.includes(5) ? '#E67E22' : '#27AE60';
+      this._tree(ctx, 350, this.canvasH * 0.55, 50, 12, 28, treeColor);
+
+      // Birds
+      this._bird(ctx, 120, 80);
+      this._bird(ctx, 150, 95);
+    },
+
+    // ===== LEVEL 2: City =====
+    'city': function(ctx, isModified, differences) {
+      // Sky
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, this.canvasH);
+      skyGrad.addColorStop(0, isModified && differences.includes(0) ? '#2C3E50' : '#5DADE2');
+      skyGrad.addColorStop(1, '#AED6F1');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+
+      // Sun
+      this._sun(ctx, 340, 45, 25);
+
+      // Clouds
+      this._cloud(ctx, 50, 50, 0.8);
+
+      // Buildings
+      const buildingColors = ['#7F8C8D', '#95A5A6', '#BDC3C7'];
+      const buildings = [
+        { x: 10, h: 120, w: 45, color: '#E74C3C' },
+        { x: 65, h: 90, w: 40, color: '#3498DB' },
+        { x: 115, h: 140, w: 50, color: '#2ECC71' },
+        { x: 175, h: 100, w: 42, color: '#F39C12' },
+        { x: 225, h: 130, w: 48, color: '#9B59B6' },
+        { x: 285, h: 85, w: 38, color: '#1ABC9C' },
+        { x: 335, h: 110, w: 45, color: '#E67E22' },
+      ];
+
+      buildings.forEach((b, i) => {
+        let color = b.color;
+        if (isModified && differences.includes(1) && i === 3) {
+          color = '#E91E63';
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(b.x, this.canvasH * 0.7 - b.h, b.w, b.h + this.canvasH * 0.3);
+        
+        // Windows
+        ctx.fillStyle = isModified && differences.includes(2) && i === 2 ? '#E74C3C' : '#F9E79F';
+        for (let wy = this.canvasH * 0.7 - b.h + 10; wy < this.canvasH * 0.7 - 10; wy += 18) {
+          for (let wx = b.x + 6; wx < b.x + b.w - 6; wx += 12) {
+            ctx.fillRect(wx, wy, 6, 8);
+          }
+        }
+      });
+
+      // Road
+      ctx.fillStyle = '#555';
+      ctx.fillRect(0, this.canvasH * 0.7, this.canvasW, this.canvasH * 0.15);
+      // Road lines
+      ctx.fillStyle = '#FFF';
+      for (let rx = 0; rx < this.canvasW; rx += 25) {
+        ctx.fillRect(rx, this.canvasH * 0.77, 15, 3);
+      }
+
+      // Sidewalk
+      ctx.fillStyle = '#DDD';
+      ctx.fillRect(0, this.canvasH * 0.85, this.canvasW, this.canvasH * 0.15);
+
+      // Cars
+      this._car(ctx, 50, this.canvasH * 0.7, '#E74C3C');
+      if (!isModified || !differences.includes(3)) {
+        this._car(ctx, 200, this.canvasH * 0.7, '#3498DB');
+      }
+      this._car(ctx, 300, this.canvasH * 0.7, '#2ECC71');
+
+      // Street lamp
+      ctx.fillStyle = '#555';
+      ctx.fillRect(160, this.canvasH * 0.4, 4, this.canvasH * 0.3);
+      ctx.beginPath();
+      ctx.arc(162, this.canvasH * 0.4, 8, 0, Math.PI * 2);
+      ctx.fillStyle = isModified && differences.includes(4) ? '#E74C3C' : '#F9E79F';
+      ctx.fill();
+
+      // Tree
+      this._tree(ctx, 370, this.canvasH * 0.7, 40, 8, 22);
+    },
+
+    // ===== LEVEL 3: Beach =====
+    'beach': function(ctx, isModified, differences) {
+      // Sky
+      this._sky(ctx, isModified && differences.includes(0) ? '#6C3483' : '#2980B9', '#85C1E9');
+
+      // Sun
+      this._sun(ctx, 330, 50, 28);
+
+      // Clouds
+      this._cloud(ctx, 70, 45, 0.9);
+
+      // Water
+      const waterColor = isModified && differences.includes(1) ? '#1A5276' : '#3498DB';
+      this._water(ctx, 0, this.canvasH * 0.4, this.canvasW, this.canvasH * 0.2);
+
+      // Sand
+      ctx.fillStyle = isModified && differences.includes(2) ? '#D4AC0D' : '#F4D03F';
+      ctx.fillRect(0, this.canvasH * 0.6, this.canvasW, this.canvasH * 0.4);
+
+      // Umbrella
+      ctx.fillStyle = '#E74C3C';
+      ctx.beginPath();
+      ctx.arc(80, this.canvasH * 0.48, 35, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(78, this.canvasH * 0.48, 4, this.canvasH * 0.25);
+
+      // Beach ball
+      const ballX = isModified && differences.includes(3) ? 180 : 250;
+      ctx.fillStyle = '#E74C3C';
+      ctx.beginPath();
+      ctx.arc(ballX, this.canvasH * 0.7, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#F39C12';
+      ctx.beginPath();
+      ctx.arc(ballX, this.canvasH * 0.7, 12, 0.5, 1.5);
+      ctx.fill();
+      ctx.fillStyle = '#FFF';
+      ctx.beginPath();
+      ctx.arc(ballX, this.canvasH * 0.7, 12, 2, 3);
+      ctx.fill();
+
+      // Palm tree
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath();
+      ctx.moveTo(330, this.canvasH * 0.6);
+      ctx.quadraticCurveTo(340, this.canvasH * 0.35, 335, this.canvasH * 0.2);
+      ctx.quadraticCurveTo(345, this.canvasH * 0.35, 338, this.canvasH * 0.6);
+      ctx.fill();
+      // Leaves
+      const leafPositions = [[335, this.canvasH * 0.2, -0.5], [335, this.canvasH * 0.2, 0.5], [335, this.canvasH * 0.2, 0], [335, this.canvasH * 0.2, -1], [335, this.canvasH * 0.2, 1]];
+      leafPositions.forEach(([lx, ly, angle]) => {
+        ctx.save();
+        ctx.translate(lx, ly);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.ellipse(25, 0, 25, 5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#27AE60';
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Seagulls
+      this._bird(ctx, 200, 60, 0.8);
+      if (!isModified || !differences.includes(4)) {
+        this._bird(ctx, 230, 75, 0.6);
+      }
+
+      // Shell
+      ctx.fillStyle = '#F5B7B1';
+      ctx.beginPath();
+      ctx.arc(350, this.canvasH * 0.75, 8, 0, Math.PI);
+      ctx.fill();
+    },
+
+    // ===== LEVEL 4: Space =====
+    'space': function(ctx, isModified, differences) {
+      // Space background
+      ctx.fillStyle = '#0B0B2B';
+      ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+
+      // Stars
+      const starPositions = [];
+      for (let i = 0; i < 50; i++) {
+        starPositions.push({
+          x: Math.random() * this.canvasW,
+          y: Math.random() * this.canvasH,
+          r: Math.random() * 2 + 0.5
+        });
+      }
+      starPositions.forEach((s, i) => {
+        if (isModified && differences.includes(0) && i === 10) return;
+        this._star(ctx, s.x, s.y, s.r);
+      });
+
+      // Planet 1 (large)
+      ctx.beginPath();
+      ctx.arc(100, 120, 50, 0, Math.PI * 2);
+      ctx.fillStyle = isModified && differences.includes(1) ? '#E74C3C' : '#E67E22';
+      ctx.fill();
+      // Ring
+      ctx.beginPath();
+      ctx.ellipse(100, 120, 75, 12, -0.2, 0, Math.PI * 2);
+      ctx.strokeStyle = isModified && differences.includes(2) ? '#3498DB' : '#F1C40F';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Planet 2 (small)
+      ctx.beginPath();
+      ctx.arc(300, 80, 20, 0, Math.PI * 2);
+      ctx.fillStyle = '#3498DB';
+      ctx.fill();
+
+      // Moon
+      ctx.beginPath();
+      ctx.arc(350, 200, 15, 0, Math.PI * 2);
+      ctx.fillStyle = '#BDC3C7';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(345, 195, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#999';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(355, 205, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#999';
+      ctx.fill();
+
+      // Shooting star
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(250, 30);
+      ctx.lineTo(280, 60);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.moveTo(280, 60);
+      ctx.lineTo(295, 75);
+      ctx.stroke();
+
+      // Nebula
+      const nebulaGrad = ctx.createRadialGradient(200, 220, 0, 200, 220, 80);
+      nebulaGrad.addColorStop(0, 'rgba(155, 89, 182, 0.3)');
+      nebulaGrad.addColorStop(0.5, 'rgba(52, 152, 219, 0.15)');
+      nebulaGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = nebulaGrad;
+      ctx.fillRect(120, 140, 160, 160);
+
+      // Rocket
+      if (!isModified || !differences.includes(3)) {
+        ctx.fillStyle = '#E74C3C';
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.lineTo(190, 240);
+        ctx.lineTo(210, 240);
+        ctx.closePath();
+        ctx.fill();
+        // Nose
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.lineTo(195, 215);
+        ctx.lineTo(205, 215);
+        ctx.closePath();
+        ctx.fill();
+        // Flame
+        ctx.fillStyle = '#F39C12';
+        ctx.beginPath();
+        ctx.moveTo(192, 240);
+        ctx.lineTo(200, 260);
+        ctx.lineTo(208, 240);
+        ctx.fill();
+      }
+
+      // Astronaut
+      if (isModified && differences.includes(4)) {
+        ctx.fillStyle = '#E74C3C';
+      } else {
+        ctx.fillStyle = '#ECF0F1';
+      }
+      ctx.beginPath();
+      ctx.arc(300, 200, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(300, 188, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // Visor
+      ctx.fillStyle = '#3498DB';
+      ctx.beginPath();
+      ctx.arc(300, 187, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Extra planet
+      ctx.beginPath();
+      ctx.arc(60, 250, 18, 0, Math.PI * 2);
+      ctx.fillStyle = isModified && differences.includes(5) ? '#27AE60' : '#9B59B6';
+      ctx.fill();
+    },
+
+    // ===== LEVEL 5: Forest =====
+    'forest': function(ctx, isModified, differences) {
+      // Sky
+      this._sky(ctx, isModified && differences.includes(0) ? '#5DADE2' : '#76D7C4', '#A9DFBF');
+
+      // Sun
+      this._sun(ctx, 300, 40, 22);
+
+      // Clouds
+      this._cloud(ctx, 80, 35, 0.7);
+
+      // Mountains
+      this._mountain(ctx, 100, this.canvasH * 0.5, 180, 80, '#5D6D7E');
+      this._mountain(ctx, 300, this.canvasH * 0.5, 150, 60, '#7F8C8D');
+
+      // Ground
+      this._ground(ctx, '#27AE60');
+
+      // Path
+      ctx.fillStyle = '#D4A76A';
+      ctx.beginPath();
+      ctx.moveTo(180, this.canvasH * 0.5);
+      ctx.quadraticCurveTo(200, this.canvasH * 0.7, 190, this.canvasH);
+      ctx.lineTo(220, this.canvasH);
+      ctx.quadraticCurveTo(230, this.canvasH * 0.7, 220, this.canvasH * 0.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Trees (many)
+      const treePositions = [
+        { x: 40, h: 70 },
+        { x: 100, h: 85 },
+        { x: 150, h: 60 },
+        { x: 250, h: 75 },
+        { x: 310, h: 90 },
+        { x: 360, h: 65 },
+      ];
+      treePositions.forEach((tp, i) => {
+        let cColor = '#27AE60';
+        if (isModified && differences.includes(1) && i === 2) {
+          cColor = '#E67E22';
+        }
+        this._tree(ctx, tp.x, this.canvasH * 0.5, tp.h, 10, 25, cColor);
+      });
+
+      // Mushrooms
+      this._mushroom(ctx, 80, this.canvasH * 0.75, '#E74C3C');
+      this._mushroom(ctx, 130, this.canvasH * 0.82, '#E74C3C');
+      if (!isModified || !differences.includes(2)) {
+        this._mushroom(ctx, 300, this.canvasH * 0.78, '#E74C3C');
+      }
+
+      // Deer
+      ctx.fillStyle = '#8B4513';
+      // Body
+      ctx.beginPath();
+      ctx.ellipse(260, this.canvasH * 0.65, 18, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Legs
+      ctx.fillRect(250, this.canvasH * 0.65 + 5, 4, 15);
+      ctx.fillRect(258, this.canvasH * 0.65 + 5, 4, 15);
+      ctx.fillRect(268, this.canvasH * 0.65 + 5, 4, 15);
+      ctx.fillRect(274, this.canvasH * 0.65 + 5, 4, 15);
+      // Head
+      ctx.beginPath();
+      ctx.arc(278, this.canvasH * 0.62, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // Antlers
+      ctx.strokeStyle = '#8B4513';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(278, this.canvasH * 0.62 - 8);
+      ctx.lineTo(272, this.canvasH * 0.62 - 22);
+      ctx.moveTo(278, this.canvasH * 0.62 - 8);
+      ctx.lineTo(284, this.canvasH * 0.62 - 22);
+      ctx.stroke();
+
+      // Butterfly
+      this._butterfly(ctx, 170, this.canvasH * 0.55, isModified && differences.includes(3) ? '#3498DB' : '#FF6B6B');
+
+      // Rabbit
+      ctx.fillStyle = '#DDD';
+      ctx.beginPath();
+      ctx.ellipse(340, this.canvasH * 0.82, 12, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(350, this.canvasH * 0.79, 7, 0, Math.PI * 2);
+      ctx.fill();
+      // Ears
+      ctx.fillStyle = '#DDD';
+      ctx.beginPath();
+      ctx.ellipse(348, this.canvasH * 0.76, 3, 10, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(354, this.canvasH * 0.76, 3, 10, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flowers
+      this._flower(ctx, 50, this.canvasH * 0.72, '#9B59B6', 15);
+      this._flower(ctx, 380, this.canvasH * 0.7, '#E91E63', 18);
+    },
+
+    _mushroom(ctx, x, y, capColor) {
+      // Stem
+      ctx.fillStyle = '#F5E6CA';
+      ctx.fillRect(x - 3, y - 12, 6, 12);
+      // Cap
+      ctx.fillStyle = capColor;
+      ctx.beginPath();
+      ctx.arc(x, y - 12, 10, Math.PI, 0);
+      ctx.fill();
+      // Spots
+      ctx.fillStyle = '#FFF';
+      ctx.beginPath();
+      ctx.arc(x - 4, y - 16, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + 3, y - 14, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+}
+
+const drawer = new SceneDrawer();
+
+// ===========================
+// GAME DATA
+// ===========================
+const LEVELS = [
+  {
+    id: 1, name: 'Taman Indah', theme: '🌸', scene: 'garden',
+    time: 60, maxHints: 3,
+    diffCount: 3,
+    differences: [
+      { x: 0.5, y: 0.2, r: 0.15, desc: 'Langit berbeda warna' },
+      { x: 0.8, y: 0.17, r: 0.12, desc: 'Matahari berubah warna' },
+      { x: 0.7, y: 0.12, r: 0.1, desc: 'Awan hilang' },
+      { x: 0.5, y: 0.7, r: 0.15, desc: 'Rumput berbeda warna' },
+      { x: 0.5, y: 0.85, r: 0.08, desc: 'Bunga hilang' },
+      { x: 0.87, y: 0.5, r: 0.1, desc: 'Pohon berubah warna' },
+    ],
+    usedDiffs: [0, 1, 2]
+  },
+  {
+    id: 2, name: 'Kota Metropolitan', theme: '🏙️', scene: 'city',
+    time: 75, maxHints: 3,
+    diffCount: 5,
+    differences: [
+      { x: 0.5, y: 0.1, r: 0.15, desc: 'Langit berbeda' },
+      { x: 0.45, y: 0.45, r: 0.08, desc: 'Gedung berubah warna' },
+      { x: 0.35, y: 0.35, r: 0.1, desc: 'Jendela gedung berbeda' },
+      { x: 0.5, y: 0.7, r: 0.1, desc: 'Mobil hilang' },
+      { x: 0.4, y: 0.4, r: 0.08, desc: 'Lampu jalan berbeda' },
+      { x: 0.2, y: 0.75, r: 0.08, desc: 'Mobil tambahan' },
+    ],
+    usedDiffs: [0, 1, 2, 3, 4]
+  },
+  {
+    id: 3, name: 'Pantai Tropis', theme: '🏖️', scene: 'beach',
+    time: 90, maxHints: 2,
+    diffCount: 5,
+    differences: [
+      { x: 0.5, y: 0.1, r: 0.15, desc: 'Langit berbeda warna' },
+      { x: 0.5, y: 0.5, r: 0.12, desc: 'Air laut berbeda' },
+      { x: 0.5, y: 0.75, r: 0.12, desc: 'Pasir berbeda warna' },
+      { x: 0.6, y: 0.7, r: 0.06, desc: 'Bola pantai berpindah' },
+      { x: 0.58, y: 0.25, r: 0.08, desc: 'Burung camar hilang' },
+      { x: 0.2, y: 0.55, r: 0.1, desc: 'Payung berbeda' },
+    ],
+    usedDiffs: [0, 1, 2, 3, 4]
+  },
+  {
+    id: 4, name: 'Luar Angkasa', theme: '🚀', scene: 'space',
+    time: 90, maxHints: 2,
+    diffCount: 6,
+    differences: [
+      { x: 0.25, y: 0.2, r: 0.06, desc: 'Bintang hilang' },
+      { x: 0.25, y: 0.4, r: 0.1, desc: 'Planet berbeda warna' },
+      { x: 0.25, y: 0.4, r: 0.15, desc: 'Cincin planet berbeda' },
+      { x: 0.5, y: 0.75, r: 0.08, desc: 'Roket hilang' },
+      { x: 0.75, y: 0.67, r: 0.06, desc: 'Astronot berubah warna' },
+      { x: 0.15, y: 0.83, r: 0.06, desc: 'Planet kecil berbeda' },
+    ],
+    usedDiffs: [0, 1, 2, 3, 4, 5]
+  },
+  {
+    id: 5, name: 'Hutan Ajaib', theme: '🌲', scene: 'forest',
+    time: 100, maxHints: 2,
+    diffCount: 7,
+    differences: [
+      { x: 0.3, y: 0.15, r: 0.12, desc: 'Langit berbeda' },
+      { x: 0.37, y: 0.4, r: 0.08, desc: 'Pohon berubah warna' },
+      { x: 0.75, y: 0.75, r: 0.06, desc: 'Jamur hilang' },
+      { x: 0.42, y: 0.55, r: 0.06, desc: 'Kupu-kupu berbeda warna' },
+      { x: 0.2, y: 0.72, r: 0.05, desc: 'Bunga berubah' },
+      { x: 0.87, y: 0.8, r: 0.06, desc: 'Kelinci berbeda' },
+      { x: 0.65, y: 0.65, r: 0.06, desc: 'Rusa berubah' },
+    ],
+    usedDiffs: [0, 1, 2, 3, 4, 5, 6]
+  }
+];
+
+// ===========================
+// GAME ENGINE
+// ===========================
+class Game {
+  constructor() {
+    this.currentPage = 'menu';
+    this.currentLevel = null;
+    this.timer = 0;
+    this.timerInterval = null;
+    this.lives = 3;
+    this.maxLives = 3;
+    this.foundDiffs = [];
+    this.hintsLeft = 0;
+    this.hintedDiffs = [];
+    this.score = 0;
+    this.combo = 0;
+    this.lastFoundTime = 0;
+    this.levelProgress = {};
+    this.canvas1 = document.getElementById('canvas1');
+    this.canvas2 = document.getElementById('canvas2');
+    this.hitbox1 = document.getElementById('hitbox1');
+    this.hitbox2 = document.getElementById('hitbox2');
+
+    this.loadProgress();
+    this.buildMenu();
+    this.bindEvents();
+  }
+
+  loadProgress() {
+    try {
+      const saved = localStorage.getItem('spotDiff_progress');
+      if (saved) this.levelProgress = JSON.parse(saved);
+    } catch(e) {}
+  }
+
+  saveProgress() {
+    try {
+      localStorage.setItem('spotDiff_progress', JSON.stringify(this.levelProgress));
+    } catch(e) {}
+  }
+
+  isLevelUnlocked(levelId) {
+    if (levelId === 1) return true;
+    return this.levelProgress[levelId - 1] && this.levelProgress[levelId - 1].completed;
+  }
+
+  buildMenu() {
+    const grid = document.getElementById('levelGrid');
+    grid.innerHTML = '';
+    LEVELS.forEach(level => {
+      const card = document.createElement('div');
+      card.className = 'level-card';
+      const unlocked = this.isLevelUnlocked(level.id);
+      const completed = this.levelProgress[level.id] && this.levelProgress[level.id].completed;
+
+      if (!unlocked) card.classList.add('locked');
+      if (completed) card.classList.add('completed');
+
+      const progress = this.levelProgress[level.id];
+      const bestTime = progress ? progress.bestTime : null;
+      const bestScore = progress ? progress.bestScore : 0;
+
+      card.innerHTML = `
+        <div class="level-num">${level.id}</div>
+        <div class="level-theme">${level.theme}</div>
+        <div class="level-diff">${level.diffCount} diff</div>
+        ${bestTime ? `<div class="best-score">⏱️ ${bestTime}s</div>` : ''}
+        ${bestScore ? `<div class="best-score">💎 ${bestScore}</div>` : ''}
+        ${!unlocked ? '<div class="lock-icon">🔒</div>' : ''}
+      `;
+
+      if (unlocked) {
+        card.addEventListener('click', () => {
+          audio.init();
+          this.startLevel(level.id);
+        });
+      }
+
+      grid.appendChild(card);
+    });
+  }
+
+  bindEvents() {
+    document.getElementById('exitBtn').addEventListener('click', () => {
+      document.getElementById('quitModal').classList.add('show');
+    });
+
+    document.getElementById('cancelQuit').addEventListener('click', () => {
+      document.getElementById('quitModal').classList.remove('show');
+    });
+
+    document.getElementById('confirmQuit').addEventListener('click', () => {
+      document.getElementById('quitModal').classList.remove('show');
+      this.endGame();
+      this.showPage('menu');
+    });
+
+    document.getElementById('hintBtn').addEventListener('click', () => {
+      this.useHint();
+    });
+
+    document.getElementById('resultMenuBtn').addEventListener('click', () => {
+      this.showPage('menu');
+      this.buildMenu();
+    });
+
+    document.getElementById('resultNextBtn').addEventListener('click', () => {
+      const nextId = this.currentLevel.id + 1;
+      if (nextId <= LEVELS.length) {
+        this.startLevel(nextId);
+      } else {
+        this.showPage('menu');
+        this.buildMenu();
+      }
+    });
+  }
+
+  showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId + 'Page').classList.add('active');
+    this.currentPage = pageId;
+  }
+
+  startLevel(levelId) {
+    const level = LEVELS.find(l => l.id === levelId);
+    if (!level) return;
+
+    this.currentLevel = level;
+    this.timer = level.time;
+    this.lives = this.maxLives;
+    this.foundDiffs = [];
+    this.hintsLeft = level.maxHints;
+    this.hintedDiffs = [];
+    this.score = 0;
+    this.combo = 0;
+    this.lastFoundTime = 0;
+
+    // Show level transition
+    const trans = document.getElementById('levelTransition');
+    document.getElementById('levelTransitionText').textContent = `Level ${level.id}`;
+    trans.classList.add('show');
+
+    setTimeout(() => {
+      trans.classList.remove('show');
+      this.showPage('game');
+      this.drawLevel();
+      this.updateUI();
+      this.startTimer();
+      this.setupHitboxes();
+    }, 1000);
+  }
+
+  drawLevel() {
+    const level = this.currentLevel;
+    drawer.drawScene(this.canvas1, level.scene, false, []);
+    drawer.drawScene(this.canvas2, level.scene, true, level.usedDiffs);
+  }
+
+  setupHitboxes() {
+    this.hitbox1.innerHTML = '';
+    this.hitbox2.innerHTML = '';
+
+    const level = this.currentLevel;
+    const usedDiffs = level.usedDiffs;
+
+    // Only setup hitbox on the modified image (canvas2)
+    usedDiffs.forEach((diffIndex, i) => {
+      const diff = level.differences[diffIndex];
+      const hitbox = document.createElement('div');
+      hitbox.className = 'hitbox';
+      hitbox.dataset.index = diffIndex;
+      hitbox.style.cssText = `
+        position: absolute;
+        left: ${diff.x * 100}%;
+        top: ${diff.y * 100}%;
+        width: ${diff.r * 2 * 100}%;
+        height: ${diff.r * 2 * (this.canvasH / this.canvasW) * 100}%;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+        z-index: 10;
+        border-radius: 50%;
+      `;
+      hitbox.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleTap(diffIndex, e);
+      });
+      this.hitbox2.appendChild(hitbox);
+    });
+
+    // Add tap handler for wrong taps on the image
+    this.hitbox2.addEventListener('pointerdown', (e) => {
+      if (e.target === this.hitbox2) {
+        this.handleWrongTap(e);
+      }
+    });
+
+    // Also handle taps on canvas1 (always wrong)
+    this.hitbox1.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.handleWrongTap(e);
+    });
+  }
+
+  get canvasW() { return drawer.canvasW; }
+  get canvasH() { return drawer.canvasH; }
+
+  handleTap(diffIndex, event) {
+    if (this.foundDiffs.includes(diffIndex)) return;
+
+    this.foundDiffs.push(diffIndex);
+    this.combo++;
+    const now = Date.now();
+    const timeDiff = now - this.lastFoundTime;
+    this.lastFoundTime = now;
+
+    // Combo scoring
+    let points = 100;
+    if (this.combo > 1 && timeDiff < 5000) {
+      points += this.combo * 25;
+      this.showComboText(event);
+      audio.play('combo');
+    }
+
+    // Time bonus
+    points += Math.floor(this.timer / this.currentLevel.time * 50);
+
+    this.score += points;
+
+    audio.play('correct');
+    this.showFoundMarker(diffIndex, event);
+    this.showScorePopup(event, points);
+    this.updateUI();
+
+    // Check win
+    if (this.foundDiffs.length === this.currentLevel.usedDiffs.length) {
+      this.winLevel();
+    }
+  }
+
+  handleWrongTap(event) {
+    // Check if tap was near a found difference (allow it)
+    const rect = this.hitbox2.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+
+    // Check if near any unfound difference
+    const level = this.currentLevel;
+    for (const diffIndex of level.usedDiffs) {
+      if (this.foundDiffs.includes(diffIndex)) continue;
+      const diff = level.differences[diffIndex];
+      const dist = Math.sqrt((x - diff.x) ** 2 + (y - diff.y) ** 2);
+      if (dist < diff.r * 1.3) return; // Close enough to count as correct
+    }
+
+    this.lives--;
+    this.combo = 0;
+    audio.play('wrong');
+
+    // Shake effect
+    const container = document.getElementById('imageContainer2');
+    container.classList.add('shake');
+    setTimeout(() => container.classList.remove('shake'), 400);
+
+    // Show wrong tap indicator
+    this.showWrongTap(event);
+
+    // Show wrong marker on both canvases
+    this.showWrongMarker(x, y);
+
+    this.updateUI();
+
+    if (this.lives <= 0) {
+      this.loseGame('Nyawa habis! 💔');
+    }
+  }
+
+  showFoundMarker(diffIndex, event) {
+    const level = this.currentLevel;
+    const diff = level.differences[diffIndex];
+
+    [this.hitbox1, this.hitbox2].forEach(container => {
+      const marker = document.createElement('div');
+      marker.className = 'found-marker';
+      const rect = container.getBoundingClientRect();
+      marker.style.left = `${diff.x * 100}%`;
+      marker.style.top = `${diff.y * 100}%`;
+      marker.style.width = `${diff.r * 2 * 100}%`;
+      marker.style.height = `${diff.r * 2 * (this.canvasH / this.canvasW) * 100}%`;
+      container.appendChild(marker);
+    });
+  }
+
+  showWrongTap(event) {
+    const container = document.getElementById('imageContainer2');
+    const rect = container.getBoundingClientRect();
+    const tap = document.createElement('div');
+    tap.className = 'wrong-tap';
+    tap.style.left = `${event.clientX - rect.left}px`;
+    tap.style.top = `${event.clientY - rect.top}px`;
+    container.appendChild(tap);
+    setTimeout(() => tap.remove(), 500);
+  }
+
+  showWrongMarker(x, y) {
+    [this.hitbox1, this.hitbox2].forEach(container => {
+      const marker = document.createElement('div');
+      marker.className = 'wrong-tap';
+      marker.style.left = `${x * 100}%`;
+      marker.style.top = `${y * 100}%`;
+      container.appendChild(marker);
+      setTimeout(() => marker.remove(), 500);
+    });
+  }
+
+  showComboText(event) {
+    const container = document.getElementById('imageContainer2');
+    const rect = container.getBoundingClientRect();
+    const combo = document.createElement('div');
+    combo.className = 'combo-text';
+    combo.textContent = `🔥 x${this.combo} COMBO!`;
+    combo.style.left = `${event.clientX - rect.left}px`;
+    combo.style.top = `${event.clientY - rect.top}px`;
+    combo.style.color = this.combo >= 3 ? '#E74C3C' : this.combo >= 2 ? '#F39C12' : '#00B894';
+    container.appendChild(combo);
+    setTimeout(() => combo.remove(), 1000);
+  }
+
+  showScorePopup(event, points) {
+    const container = document.getElementById('imageContainer2');
+    const rect = container.getBoundingClientRect();
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    popup.textContent = `+${points}`;
+    popup.style.left = `${event.clientX - rect.left}px`;
+    popup.style.top = `${event.clientY - rect.top - 20}px`;
+    container.appendChild(popup);
+    setTimeout(() => popup.remove(), 800);
+  }
+
+  useHint() {
+    if (this.hintsLeft <= 0) return;
+
+    const level = this.currentLevel;
+    const unfound = level.usedDiffs.filter(d => !this.foundDiffs.includes(d) && !this.hintedDiffs.includes(d));
+
+    if (unfound.length === 0) return;
+
+    const hintIndex = unfound[Math.floor(Math.random() * unfound.length)];
+    this.hintsLeft--;
+    this.hintedDiffs.push(hintIndex);
+
+    audio.play('hint');
+
+    const diff = level.differences[hintIndex];
+
+    [this.hitbox1, this.hitbox2].forEach(container => {
+      const pulse = document.createElement('div');
+      pulse.className = 'hint-pulse';
+      pulse.style.left = `${diff.x * 100}%`;
+      pulse.style.top = `${diff.y * 100}%`;
+      pulse.style.width = `${diff.r * 2 * 100}%`;
+      pulse.style.height = `${diff.r * 2 * (this.canvasH / this.canvasW) * 100}%`;
+      container.appendChild(pulse);
+      setTimeout(() => pulse.remove(), 4500);
+    });
+
+    this.updateUI();
+  }
+
+  startTimer() {
+    this.updateTimerDisplay();
+    this.timerInterval = setInterval(() => {
+      this.timer--;
+      this.updateTimerDisplay();
+
+      if (this.timer <= 10 && this.timer > 0) {
+        audio.play('tick');
+      }
+
+      if (this.timer <= 0) {
+        this.loseGame('Waktu habis! ⏰');
+      }
+    }, 1000);
+  }
+
+  updateTimerDisplay() {
+    const display = document.getElementById('timerDisplay');
+    display.textContent = this.timer;
+    if (this.timer <= 10) {
+      display.classList.add('warning');
+    } else {
+      display.classList.remove('warning');
+    }
+  }
+
+  updateUI() {
+    // Lives
+    const livesContainer = document.getElementById('livesContainer');
+    livesContainer.innerHTML = '';
+    for (let i = 0; i < this.maxLives; i++) {
+      const heart = document.createElement('span');
+      heart.className = `heart ${i >= this.lives ? 'lost' : ''}`;
+      heart.textContent = '❤️';
+      livesContainer.appendChild(heart);
+    }
+
+    // Progress
+    const total = this.currentLevel.usedDiffs.length;
+    const found = this.foundDiffs.length;
+    const pct = (found / total) * 100;
+    document.getElementById('progressBar').style.width = `${pct}%`;
+    document.getElementById('progressText').textContent = `${found}/${total}`;
+
+    // Hint
+    const hintBtn = document.getElementById('hintBtn');
+    document.getElementById('hintCount').textContent = this.hintsLeft;
+    hintBtn.disabled = this.hintsLeft <= 0;
+  }
+
+  winLevel() {
+    clearInterval(this.timerInterval);
+    audio.play('win');
+
+    const timeUsed = this.currentLevel.time - this.timer;
+    const timeBonus = this.timer * 10;
+    this.score += timeBonus;
+
+    // Stars calculation
+    const timeRatio = this.timer / this.currentLevel.time;
+    const stars = timeRatio > 0.6 ? 3 : timeRatio > 0.3 ? 2 : 1;
+
+    // Save progress
+    if (!this.levelProgress[this.currentLevel.id] || this.levelProgress[this.currentLevel.id].bestScore < this.score) {
+      this.levelProgress[this.currentLevel.id] = {
+        completed: true,
+        bestTime: timeUsed,
+        bestScore: this.score,
+        stars: stars
+      };
+    } else if (!this.levelProgress[this.currentLevel.id].completed) {
+      this.levelProgress[this.currentLevel.id].completed = true;
+    }
+    this.saveProgress();
+
+    // Show confetti
+    this.launchConfetti();
+
+    // Show result after delay
+    setTimeout(() => {
+      this.showResult(true, timeUsed, stars);
+    }, 1500);
+  }
+
+  loseGame(reason) {
+    clearInterval(this.timerInterval);
+    audio.play('lose');
+
+    const timeUsed = this.currentLevel.time - this.timer;
+
+    setTimeout(() => {
+      this.showResult(false, timeUsed, 0, reason);
+    }, 500);
+  }
+
+  showResult(isWin, timeUsed, stars, reason) {
+    const icon = document.getElementById('resultIcon');
+    const title = document.getElementById('resultTitle');
+    const subtitle = document.getElementById('resultSubtitle');
+    const starsContainer = document.getElementById('starsContainer');
+
+    if (isWin) {
+      icon.textContent = '🎉';
+      title.textContent = 'Level Complete!';
+      title.className = 'result-title win';
+      subtitle.textContent = `Kamu menemukan semua perbedaan!`;
+    } else {
+      icon.textContent = '😢';
+      title.textContent = 'Game Over';
+      title.className = 'result-title lose';
+      subtitle.textContent = reason || 'Coba lagi ya!';
+    }
+
+    // Stars
+    starsContainer.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const star = document.createElement('span');
+      star.className = `star ${i < stars ? '' : 'empty'}`;
+      star.textContent = '⭐';
+      starsContainer.appendChild(star);
+    }
+
+    document.getElementById('resultTime').textContent = `${timeUsed}s`;
+    document.getElementById('resultScore').textContent = this.score;
+
+    const nextBtn = document.getElementById('resultNextBtn');
+    if (isWin && this.currentLevel.id < LEVELS.length) {
+      nextBtn.textContent = 'Lanjut';
+      nextBtn.style.display = '';
+    } else {
+      nextBtn.textContent = 'Menu';
+    }
+
+    this.showPage('result');
+  }
+
+  endGame() {
+    clearInterval(this.timerInterval);
+  }
+
+  launchConfetti() {
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const colors = ['#6C5CE7', '#00CEC9', '#FD79A8', '#FDCB6E', '#00B894', '#E17055', '#A29BFE'];
+
+    for (let i = 0; i < 100; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 200,
+        w: Math.random() * 8 + 4,
+        h: Math.random() * 6 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: Math.random() * 3 + 2,
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 10,
+        opacity: 1
+      });
+    }
+
+    let frame = 0;
+    const maxFrames = 180;
+
+    const animate = () => {
+      frame++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1;
+        p.rotation += p.rotationSpeed;
+        if (frame > maxFrames - 60) {
+          p.opacity -= 0.016;
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation * Math.PI / 180);
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      if (frame < maxFrames) {
+        requestAnimationFrame(animate);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    animate();
+  }
+}
+
+// ===========================
+// INIT
+// ===========================
+window.addEventListener('DOMContentLoaded', () => {
+  window.game = new Game();
+});
+
+// Prevent zoom on double tap
+document.addEventListener('dblclick', e => e.preventDefault());
+
+// roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+    let r = typeof radii === 'number' ? [radii, radii, radii, radii] : 
+            Array.isArray(radii) ? radii.length === 1 ? [radii[0], radii[0], radii[0], radii[0]] :
+            radii.length === 2 ? [radii[0], radii[0], radii[1], radii[1]] :
+            radii.length === 4 ? radii : [0,0,0,0] : [0,0,0,0];
+    this.moveTo(x + r[0], y);
+    this.lineTo(x + w - r[1], y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+    this.lineTo(x + w, y + h - r[2]);
+    this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+    this.lineTo(x + r[3], y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+    this.lineTo(x, y + r[0]);
+    this.quadraticCurveTo(x, y, x + r[0], y);
+    this.closePath();
+    return this;
+  };
+}
+</script>
+</body>
+</html>

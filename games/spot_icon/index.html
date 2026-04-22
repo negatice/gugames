@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hidden Object Hunter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  :root {
+    --primary: #6C5CE7;
+    --primary-light: #A29BFE;
+    --primary-dark: #5A4BD1;
+    --accent: #FD79A8;
+    --accent-light: #FDCB6E;
+    --success: #00B894;
+    --danger: #E17055;
+    --warning: #FDCB6E;
+    --dark: #2D3436;
+    --dark-light: #636E72;
+    --light: #DFE6E9;
+    --white: #FFFFFF;
+    --bg-gradient: linear-gradient(135deg, #0c0c1d 0%, #1a1a3e 50%, #0c0c1d 100%);
+    --glass: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.12);
+    --shadow: 0 8px 32px rgba(0,0,0,0.3);
+    --radius: 16px;
+    --radius-sm: 12px;
+    --radius-lg: 24px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--white);
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  .page {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
+    transform: scale(0.95);
+    padding: 20px;
+  }
+
+  .page.active {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    z-index: 10;
+  }
+
+  /* ==================== PAGE 1: UPLOAD ==================== */
+  #uploadPage {
+    background: var(--bg-gradient);
+    gap: 0;
+  }
+
+  .upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .game-logo {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .game-logo .logo-icon {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 8px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .game-logo h1 {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent-light), var(--accent), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .game-logo p {
+    font-size: 14px;
+    color: var(--dark-light);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .upload-zone {
+    width: 100%;
+    aspect-ratio: 3/4;
+    border: 2.5px dashed var(--primary-light);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(253,121,168,0.08);
+    transform: scale(1.02);
+  }
+
+  .upload-zone .upload-icon {
+    font-size: 56px;
+    opacity: 0.7;
+  }
+
+  .upload-zone .upload-text {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--light);
+  }
+
+  .upload-zone .upload-subtext {
+    font-size: 12px;
+    color: var(--dark-light);
+    font-weight: 600;
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .preview-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    display: none;
+  }
+
+  .upload-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-zone.has-image .upload-overlay {
+    opacity: 1;
+  }
+
+  .upload-overlay span {
+    font-size: 14px;
+    font-weight: 700;
+    background: var(--glass);
+    padding: 8px 20px;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+  }
+
+  .level-selector {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .level-btn {
+    flex: 1;
+    padding: 14px 8px;
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius);
+    background: var(--glass);
+    color: var(--light);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .level-btn .level-num {
+    font-size: 22px;
+    font-weight: 900;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .level-btn.selected {
+    border-color: var(--primary);
+    background: rgba(108,92,231,0.2);
+    color: var(--white);
+    box-shadow: 0 0 20px rgba(108,92,231,0.3);
+  }
+
+  .level-btn:nth-child(1).selected { border-color: var(--success); background: rgba(0,184,148,0.2); box-shadow: 0 0 20px rgba(0,184,148,0.3); }
+  .level-btn:nth-child(2).selected { border-color: var(--warning); background: rgba(253,203,110,0.2); box-shadow: 0 0 20px rgba(253,203,110,0.3); }
+  .level-btn:nth-child(3).selected { border-color: var(--danger); background: rgba(225,112,85,0.2); box-shadow: 0 0 20px rgba(225,112,85,0.3); }
+
+  .start-btn {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: var(--white);
+    font-family: 'Nunito', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(108,92,231,0.4);
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+  }
+
+  .start-btn:active {
+    transform: scale(0.96);
+  }
+
+  .start-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ==================== PAGE 2: GAMEPLAY ==================== */
+  #gamePage {
+    padding: 0;
+    background: #0a0a1a;
+    justify-content: flex-start;
+  }
+
+  .game-header {
+    width: 100%;
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,26,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+    position: relative;
+  }
+
+  .lives-container {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .heart {
+    font-size: 20px;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 4px rgba(255,0,0,0.5));
+  }
+
+  .heart.lost {
+    filter: grayscale(1) opacity(0.3);
+    transform: scale(0.8);
+  }
+
+  .heart.losing {
+    animation: heartBreak 0.5s ease forwards;
+  }
+
+  @keyframes heartBreak {
+    0% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255,0,0,0.5)); }
+    30% { transform: scale(1.4); filter: drop-shadow(0 0 12px rgba(255,0,0,0.8)); }
+    100% { transform: scale(0.8); filter: grayscale(1) opacity(0.3); }
+  }
+
+  .timer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .timer-display {
+    font-size: 24px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--white);
+    transition: color 0.3s;
+  }
+
+  .timer-display.warning {
+    color: var(--warning);
+    animation: timerPulse 0.5s ease infinite alternate;
+  }
+
+  .timer-display.danger {
+    color: var(--danger);
+    animation: timerPulse 0.3s ease infinite alternate;
+  }
+
+  @keyframes timerPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+  }
+
+  .timer-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--dark-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .score-display {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent-light);
+    background: rgba(253,203,110,0.1);
+    padding: 4px 12px;
+    border-radius: 50px;
+    border: 1px solid rgba(253,203,110,0.2);
+  }
+
+  .exit-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: var(--glass);
+    color: var(--light);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .exit-btn:active {
+    transform: scale(0.9);
+    background: rgba(225,112,85,0.3);
+  }
+
+  .game-area {
+    flex: 1;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .game-image-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .game-image-wrapper img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.1s ease;
+  }
+
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.1);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .hidden-icon {
+    position: absolute;
+    z-index: 5;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hidden-icon .icon-inner {
+    font-size: inherit;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+    transition: all 0.3s ease;
+  }
+
+  .hidden-icon.size-big { opacity: 0.25; }
+  .hidden-icon.size-medium { opacity: 0.18; }
+  .hidden-icon.size-small { opacity: 0.12; }
+  .hidden-icon.size-tiny { opacity: 0.08; }
+
+  .hidden-icon.size-big .icon-inner { filter: blur(0.5px); }
+  .hidden-icon.size-medium .icon-inner { filter: blur(1px); }
+  .hidden-icon.size-small .icon-inner { filter: blur(1.5px); }
+  .hidden-icon.size-tiny .icon-inner { filter: blur(2px); }
+
+  .found-marker {
+    position: absolute;
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: markerPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .found-marker .marker-circle {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--success);
+    border-radius: 50%;
+    animation: markerGlow 1s ease infinite alternate;
+    box-shadow: 0 0 15px rgba(0,184,148,0.5), inset 0 0 15px rgba(0,184,148,0.1);
+  }
+
+  .found-marker .marker-icon {
+    position: absolute;
+    font-size: 24px;
+    animation: markerIconPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both;
+  }
+
+  @keyframes markerPop {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes markerGlow {
+    from { box-shadow: 0 0 10px rgba(0,184,148,0.3), inset 0 0 10px rgba(0,184,148,0.05); }
+    to { box-shadow: 0 0 25px rgba(0,184,148,0.6), inset 0 0 20px rgba(0,184,148,0.15); }
+  }
+
+  @keyframes markerIconPop {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .tap-indicator {
+    position: absolute;
+    z-index: 15;
+    pointer-events: none;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--danger);
+    border-radius: 50%;
+    animation: tapWrong 0.6s ease forwards;
+  }
+
+  @keyframes tapWrong {
+    0% { transform: scale(0); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.6; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  .shake {
+    animation: screenShake 0.4s ease;
+  }
+
+  @keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-6px, -3px); }
+    20% { transform: translate(6px, 3px); }
+    30% { transform: translate(-4px, 4px); }
+    40% { transform: translate(4px, -4px); }
+    50% { transform: translate(-3px, 2px); }
+    60% { transform: translate(3px, -2px); }
+    70% { transform: translate(-2px, 1px); }
+    80% { transform: translate(2px, -1px); }
+    90% { transform: translate(-1px, 0); }
+  }
+
+  .game-footer {
+    width: 100%;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: rgba(10,10,26,0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+    position: relative;
+  }
+
+  .progress-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .progress-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--light);
+  }
+
+  .progress-text span {
+    color: var(--success);
+    font-weight: 900;
+  }
+
+  .progress-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50px;
+    margin: 0 12px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--accent-light));
+    border-radius: 50px;
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 10px rgba(0,184,148,0.4);
+  }
+
+  .combo-text {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--accent-light);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .footer-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  .hint-btn {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid rgba(253,203,110,0.3);
+    border-radius: var(--radius);
+    background: rgba(253,203,110,0.08);
+    color: var(--accent-light);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .hint-btn:active {
+    transform: scale(0.96);
+  }
+
+  .hint-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .hint-count {
+    background: var(--accent-light);
+    color: var(--dark);
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 50px;
+  }
+
+  .hint-pulse {
+    position: absolute;
+    z-index: 25;
+    pointer-events: none;
+    width: 60px;
+    height: 60px;
+    border: 3px solid var(--accent-light);
+    border-radius: 50%;
+    animation: hintPulse 1s ease infinite;
+  }
+
+  @keyframes hintPulse {
+    0% { transform: scale(0.5); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.4; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  /* ==================== PAGE 3: RESULT ==================== */
+  #resultPage {
+    background: var(--bg-gradient);
+    gap: 20px;
+  }
+
+  .result-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .result-icon {
+    font-size: 80px;
+    animation: resultBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes resultBounce {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .result-title {
+    font-size: 32px;
+    font-weight: 900;
+  }
+
+  .result-title.win {
+    background: linear-gradient(135deg, var(--success), var(--accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-title.lose {
+    color: var(--danger);
+  }
+
+  .result-subtitle {
+    font-size: 15px;
+    color: var(--dark-light);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+  }
+
+  .stat-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 16px 8px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--accent-light);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--dark-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  .result-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .result-btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .result-btn:active {
+    transform: scale(0.96);
+  }
+
+  .btn-retry {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    box-shadow: 0 4px 15px rgba(108,92,231,0.3);
+  }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--success), #00D2A0);
+    color: var(--white);
+    box-shadow: 0 4px 15px rgba(0,184,148,0.3);
+  }
+
+  .btn-home {
+    background: var(--glass);
+    border: 2px solid var(--glass-border);
+    color: var(--light);
+  }
+
+  /* ==================== CONFETTI ==================== */
+  .confetti-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -20px;
+    animation: confettiFall linear forwards;
+  }
+
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+  }
+
+  /* ==================== FLOATING SCORE ==================== */
+  .floating-score {
+    position: absolute;
+    z-index: 30;
+    pointer-events: none;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--success);
+    text-shadow: 0 0 10px rgba(0,184,148,0.5);
+    animation: floatScore 1s ease forwards;
+  }
+
+  @keyframes floatScore {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+  }
+
+  /* ==================== PARTICLES ==================== */
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 15;
+  }
+
+  /* ==================== LEVEL BADGE ==================== */
+  .level-badge {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--light);
+    opacity: 0;
+    animation: badgeIn 0.5s ease 0.3s forwards;
+  }
+
+  @keyframes badgeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* ==================== LOADING ==================== */
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--glass-border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* ==================== ZOOM CONTROLS ==================== */
+  .zoom-controls {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .zoom-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .zoom-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.3);
+  }
+
+  /* ==================== RESPONSIVE ==================== */
+  @media (max-height: 700px) {
+    .game-logo .logo-icon { font-size: 48px; }
+    .game-logo h1 { font-size: 24px; }
+    .upload-zone { aspect-ratio: 4/3; }
+    .level-btn { padding: 10px 6px; }
+    .level-btn .level-num { font-size: 18px; }
+    .start-btn { padding: 14px; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1: UPLOAD ==================== -->
+<div id="uploadPage" class="page active">
+  <div class="upload-container">
+    <div class="game-logo">
+      <span class="logo-icon"></span>
+      <h1>Hidden Object</h1>
+      <p>Temukan ikon tersembunyi di fotomu!</p>
+    </div>
+
+    <div class="upload-zone" id="uploadZone">
+      <span class="upload-icon">📷</span>
+      <span class="upload-text">Tap untuk upload foto</span>
+      <span class="upload-subtext">JPG, PNG • Maks 10MB</span>
+      <input type="file" id="fileInput" accept="image/*">
+      <img class="preview-thumb" id="previewThumb">
+      <div class="upload-overlay"><span>🔄 Ganti Foto</span></div>
+    </div>
+
+    <div class="level-selector">
+      <button class="level-btn selected" data-level="1">
+        <span class="level-num">1</span>
+        Mudah
+      </button>
+      <button class="level-btn" data-level="2">
+        <span class="level-num">2</span>
+        Sedang
+      </button>
+      <button class="level-btn" data-level="3">
+        <span class="level-num">3</span>
+        Sulit
+      </button>
+    </div>
+
+    <button class="start-btn" id="startBtn" disabled>
+      Mulai Bermain
+    </button>
+  </div>
+</div>
+
+<!-- ==================== PAGE 2: GAMEPLAY ==================== -->
+<div id="gamePage" class="page">
+  <div class="game-header">
+    <div class="lives-container" id="livesContainer">
+      <span class="heart">❤️</span>
+      <span class="heart">❤️</span>
+      <span class="heart">❤️</span>
+    </div>
+    <div class="timer-container">
+      <div class="timer-display" id="timerDisplay">60</div>
+      <div class="timer-label">detik</div>
+    </div>
+    <div class="header-right">
+      <div class="score-display" id="scoreDisplay">⭐ 0</div>
+      <button class="exit-btn" id="exitBtn">✕</button>
+    </div>
+  </div>
+
+  <div class="game-area" id="gameArea">
+    <div class="game-image-wrapper" id="imageWrapper">
+      <img id="gameImage" src="" alt="Game Image">
+      <div class="image-overlay"></div>
+    </div>
+    <div class="level-badge" id="levelBadge">Level 1</div>
+  </div>
+
+  <div class="game-footer">
+    <div class="progress-section">
+      <div class="progress-text"><span id="foundCount">0</span> / <span id="totalCount">3</span> ditemukan</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="combo-text" id="comboText"></div>
+    </div>
+    <div class="footer-buttons">
+      <button class="hint-btn" id="hintBtn">
+        💡 Hint <span class="hint-count" id="hintCount">3</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3: RESULT ==================== -->
+<div id="resultPage" class="page">
+  <div class="result-container">
+    <div class="result-icon" id="resultIcon">🎉</div>
+    <div class="result-title" id="resultTitle">Level Complete!</div>
+    <div class="result-subtitle" id="resultSubtitle">Kamu menemukan semua objek!</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statTime">45s</div>
+        <div class="stat-label">Waktu</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statScore">500</div>
+        <div class="stat-label">Skor</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statCombo">x3</div>
+        <div class="stat-label">Max Combo</div>
+      </div>
+    </div>
+    <div class="result-buttons" id="resultButtons"></div>
+  </div>
+</div>
+
+<!-- ==================== CONFETTI CONTAINER ==================== -->
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+// ==================== GAME STATE ====================
+const state = {
+  currentLevel: 1,
+  lives: 3,
+  maxLives: 3,
+  score: 0,
+  timeLeft: 60,
+  totalTime: 60,
+  totalIcons: 3,
+  foundIcons: 0,
+  hintsLeft: 3,
+  combo: 0,
+  maxCombo: 0,
+  lastFoundTime: 0,
+  gameActive: false,
+  timerInterval: null,
+  icons: [],
+  uploadedImage: null,
+  scale: 1,
+  offsetX: 0,
+  offsetY: 0,
+  isDragging: false,
+  lastTouchX: 0,
+  lastTouchY: 0,
+  lastTouchDist: 0,
+};
+
+// ==================== DOM REFS ====================
+const $ = (sel) => document.querySelector(sel);
+const uploadPage = $('#uploadPage');
+const gamePage = $('#gamePage');
+const resultPage = $('#resultPage');
+const uploadZone = $('#uploadZone');
+const fileInput = $('#fileInput');
+const previewThumb = $('#previewThumb');
+const startBtn = $('#startBtn');
+const levelBtns = document.querySelectorAll('.level-btn');
+const gameArea = $('#gameArea');
+const imageWrapper = $('#imageWrapper');
+const gameImage = $('#gameImage');
+const timerDisplay = $('#timerDisplay');
+const livesContainer = $('#livesContainer');
+const scoreDisplay = $('#scoreDisplay');
+const exitBtn = $('#exitBtn');
+const foundCount = $('#foundCount');
+const totalCount = $('#totalCount');
+const progressBar = $('#progressBar');
+const comboText = $('#comboText');
+const hintBtn = $('#hintBtn');
+const hintCount = $('#hintCount');
+const levelBadge = $('#levelBadge');
+const confettiContainer = $('#confettiContainer');
+
+// ==================== ICONS DATA ====================
+const ICONS = [
+  { emoji: '⭐', name: 'star' },
+  { emoji: '🌟', name: 'glowstar' },
+  { emoji: '🍉', name: 'watermelon' },
+  { emoji: '🍊', name: 'orange' },
+  { emoji: '🦁', name: 'lion' },
+  { emoji: '🐱', name: 'cat' },
+  { emoji: '🦋', name: 'butterfly' },
+  { emoji: '🐝', name: 'bee' },
+  { emoji: '🌸', name: 'flower' },
+  { emoji: '🔮', name: 'crystal' },
+  { emoji: '💎', name: 'diamond' },
+  { emoji: '🎈', name: 'balloon' },
+  { emoji: '🍄', name: 'mushroom' },
+  { emoji: '🐞', name: 'ladybug' },
+  { emoji: '🌈', name: 'rainbow' },
+  { emoji: '🎯', name: 'target' },
+];
+
+// ==================== LEVEL CONFIG ====================
+const LEVEL_CONFIG = {
+  1: { icons: 3, sizes: ['big','big','big'], time: 60, hints: 3 },
+  2: { icons: 5, sizes: ['big','big','medium','medium','small'], time: 50, hints: 2 },
+  3: { icons: 7, sizes: ['medium','medium','medium','small','small','small','tiny'], time: 40, hints: 2 },
+};
+
+const SIZE_MAP = {
+  big:    { px: 48, opacity: 0.25, blur: '0.5px', label: '🟢 Besar' },
+  medium: { px: 36, opacity: 0.18, blur: '1px', label: '🟡 Sedang' },
+  small:  { px: 26, opacity: 0.12, blur: '1.5px', label: '🔴 Kecil' },
+  tiny:   { px: 18, opacity: 0.08, blur: '2px', label: '⚫ Sangat Kecil' },
+};
+
+// ==================== PAGE NAVIGATION ====================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  page.classList.add('active');
+}
+
+// ==================== UPLOAD HANDLING ====================
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    state.uploadedImage = ev.target.result;
+    previewThumb.src = ev.target.result;
+    previewThumb.style.display = 'block';
+    uploadZone.classList.add('has-image');
+    startBtn.disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+  uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+  }
+});
+
+// ==================== LEVEL SELECTION ====================
+levelBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    levelBtns.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.currentLevel = parseInt(btn.dataset.level);
+  });
+});
+
+// ==================== START GAME ====================
+startBtn.addEventListener('click', () => {
+  if (!state.uploadedImage) return;
+  initGame();
+});
+
+exitBtn.addEventListener('click', () => {
+  endGame(false, true);
+});
+
+function initGame() {
+  const config = LEVEL_CONFIG[state.currentLevel];
+  state.lives = 3;
+  state.maxLives = 3;
+  state.score = 0;
+  state.timeLeft = config.time;
+  state.totalTime = config.time;
+  state.totalIcons = config.icons;
+  state.foundIcons = 0;
+  state.hintsLeft = config.hints;
+  state.combo = 0;
+  state.maxCombo = 0;
+  state.lastFoundTime = 0;
+  state.gameActive = true;
+  state.scale = 1;
+  state.offsetX = 0;
+  state.offsetY = 0;
+  state.icons = [];
+
+  gameImage.src = state.uploadedImage;
+  gameImage.onload = () => {
+    showPage(gamePage);
+    updateUI();
+    levelBadge.textContent = `Level ${state.currentLevel}`;
+    generateIcons();
+    startTimer();
+    setupTouchControls();
+  };
+}
+
+// ==================== ICON GENERATION ====================
+function generateIcons() {
+  const config = LEVEL_CONFIG[state.currentLevel];
+  const wrapper = imageWrapper;
+  const imgRect = gameImage.getBoundingClientRect();
+  const wrapRect = wrapper.getBoundingClientRect();
+
+  // Calculate image position within wrapper
+  const imgNaturalW = gameImage.naturalWidth;
+  const imgNaturalH = gameImage.naturalHeight;
+  const wrapperW = wrapRect.width;
+  const wrapperH = wrapRect.height;
+
+  const scaleW = wrapperW / imgNaturalW;
+  const scaleH = wrapperH / imgNaturalH;
+  const fitScale = Math.min(scaleW, scaleH);
+
+  const dispW = imgNaturalW * fitScale;
+  const dispH = imgNaturalH * fitScale;
+
+  const imgX = (wrapperW - dispW) / 2;
+  const imgY = (wrapperH - dispH) / 2;
+
+  // Shuffle icons
+  const shuffled = [...ICONS].sort(() => Math.random() - 0.5);
+  const positions = [];
+  const minGap = 60;
+
+  for (let i = 0; i < config.icons; i++) {
+    const size = config.sizes[i] || 'medium';
+    const sizeData = SIZE_MAP[size];
+    const iconData = shuffled[i % shuffled.length];
+
+    let attempts = 0;
+    let pos = null;
+
+    while (attempts < 200) {
+      const x = imgX + Math.random() * (dispW - sizeData.px - 10);
+      const y = imgY + Math.random() * (dispH - sizeData.px - 10);
+
+      let tooClose = false;
+      for (const p of positions) {
+        const dx = (x + sizeData.px/2) - (p.x + p.size/2);
+        const dy = (y + sizeData.px/2) - (p.y + p.size/2);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < minGap) { tooClose = true; break; }
+      }
+
+      if (!tooClose) {
+        pos = { x, y, size: sizeData.px };
+        break;
+      }
+      attempts++;
+    }
+
+    if (!pos) {
+      pos = {
+        x: imgX + Math.random() * (dispW - 50),
+        y: imgY + Math.random() * (dispH - 50),
+        size: sizeData.px
+      };
+    }
+
+    positions.push(pos);
+
+    const el = document.createElement('div');
+    el.className = `hidden-icon size-${size}`;
+    el.style.cssText = `
+      left: ${pos.x}px;
+      top: ${pos.y}px;
+      width: ${sizeData.px}px;
+      height: ${sizeData.px}px;
+      font-size: ${sizeData.px * 0.7}px;
+    `;
+    el.innerHTML = `<span class="icon-inner">${iconData.emoji}</span>`;
+    el.dataset.index = i;
+    el.dataset.size = size;
+    el.dataset.found = 'false';
+
+    el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      handleIconTap(el, i, pos.x, pos.y);
+    });
+
+    wrapper.appendChild(el);
+    state.icons.push({
+      el, x: pos.x, y: pos.y, size: sizeData.px,
+      icon: iconData, found: false, sizeClass: size
+    });
+  }
+
+  // Tap handler for wrong taps
+  wrapper.addEventListener('pointerdown', handleWrongTap);
+}
+
+// ==================== TAP HANDLERS ====================
+function handleIconTap(el, index, x, y) {
+  if (!state.gameActive) return;
+  if (el.dataset.found === 'true') return;
+
+  el.dataset.found = 'true';
+  const iconData = state.icons[index];
+  iconData.found = true;
+
+  // Calculate time bonus
+  const now = Date.now();
+  let timeBonus = 0;
+  if (state.lastFoundTime > 0) {
+    const diff = (now - state.lastFoundTime) / 1000;
+    if (diff < 3) {
+      state.combo++;
+      timeBonus = state.combo * 10;
+    } else {
+      state.combo = 1;
+    }
+  } else {
+    state.combo = 1;
+  }
+  state.lastFoundTime = now;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+  // Size score
+  const sizeScores = { big: 50, medium: 80, small: 120, tiny: 200 };
+  const sizeScore = sizeScores[iconData.sizeClass] || 50;
+  const totalScore = sizeScore + timeBonus;
+  state.score += totalScore;
+
+  // Show found marker
+  showFoundMarker(x, y, iconData.icon.emoji);
+  showFloatingScore(x, y, `+${totalScore}`);
+  spawnParticles(x, y);
+
+  state.foundIcons++;
+  updateUI();
+
+  // Remove tap handler temporarily to prevent double tap
+  setTimeout(() => {
+    if (state.foundIcons >= state.totalIcons) {
+      winGame();
+    }
+  }, 300);
+}
+
+function handleWrongTap(e) {
+  if (!state.gameActive) return;
+  if (e.target.closest('.hidden-icon') && e.target.closest('.hidden-icon').dataset.found !== 'true') return;
+
+  const rect = gameArea.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  // Show wrong tap indicator
+  const indicator = document.createElement('div');
+  indicator.className = 'tap-indicator';
+  indicator.style.left = (x - 20) + 'px';
+  indicator.style.top = (y - 20) + 'px';
+  gameArea.appendChild(indicator);
+  setTimeout(() => indicator.remove(), 600);
+
+  state.lives--;
+  state.combo = 0;
+  updateUI();
+
+  // Screen shake
+  gameArea.classList.add('shake');
+  setTimeout(() => gameArea.classList.remove('shake'), 400);
+
+  if (state.lives <= 0) {
+    loseGame();
+  }
+}
+
+// ==================== VISUAL EFFECTS ====================
+function showFoundMarker(x, y, emoji) {
+  const marker = document.createElement('div');
+  marker.className = 'found-marker';
+  marker.style.left = (x - 25) + 'px';
+  marker.style.top = (y - 25) + 'px';
+  marker.innerHTML = `
+    <div class="marker-circle"></div>
+    <span class="marker-icon">${emoji}</span>
+  `;
+  imageWrapper.appendChild(marker);
+}
+
+function showFloatingScore(x, y, text) {
+  const el = document.createElement('div');
+  el.className = 'floating-score';
+  el.textContent = text;
+  el.style.left = (x - 20) + 'px';
+  el.style.top = (y - 30) + 'px';
+  gameArea.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function spawnParticles(x, y) {
+  const colors = ['#00B894', '#FDCB6E', '#FD79A8', '#6C5CE7', '#A29BFE', '#FF7675'];
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 4 + Math.random() * 6;
+    p.style.cssText = `
+      left: ${x}px; top: ${y}px;
+      width: ${size}px; height: ${size}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+    `;
+    gameArea.appendChild(p);
+
+    const angle = (Math.PI * 2 / 12) * i;
+    const velocity = 30 + Math.random() * 50;
+    const dx = Math.cos(angle) * velocity;
+    const dy = Math.sin(angle) * velocity;
+
+    p.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
+    ], { duration: 600, easing: 'cubic-bezier(0,0.8,0.5,1)' });
+
+    setTimeout(() => p.remove(), 600);
+  }
+}
+
+function spawnConfetti() {
+  confettiContainer.innerHTML = '';
+  const colors = ['#6C5CE7', '#FD79A8', '#00B894', '#FDCB6E', '#FF7675', '#74B9FF', '#A29BFE', '#FFEAA7'];
+  const shapes = ['square', 'circle'];
+
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    const size = 6 + Math.random() * 10;
+    const left = Math.random() * 100;
+    const delay = Math.random() * 2;
+    const duration = 2 + Math.random() * 3;
+
+    piece.style.cssText = `
+      left: ${left}%;
+      width: ${size}px;
+      height: ${shape === 'circle' ? size : size * 1.5}px;
+      background: ${color};
+      border-radius: ${shape === 'circle' ? '50%' : '2px'};
+      animation-delay: ${delay}s;
+      animation-duration: ${duration}s;
+    `;
+    confettiContainer.appendChild(piece);
+  }
+
+  setTimeout(() => confettiContainer.innerHTML = '', 5000);
+}
+
+// ==================== HINT SYSTEM ====================
+hintBtn.addEventListener('click', () => {
+  if (!state.gameActive || state.hintsLeft <= 0) return;
+
+  const unfound = state.icons.filter(i => !i.found);
+  if (unfound.length === 0) return;
+
+  state.hintsLeft--;
+  hintCount.textContent = state.hintsLeft;
+  if (state.hintsLeft <= 0) hintBtn.disabled = true;
+
+  const target = unfound[Math.floor(Math.random() * unfound.length)];
+  const pulse = document.createElement('div');
+  pulse.className = 'hint-pulse';
+  pulse.style.left = (target.x - 30 + target.size/2) + 'px';
+  pulse.style.top = (target.y - 30 + target.size/2) + 'px';
+  imageWrapper.appendChild(pulse);
+
+  setTimeout(() => pulse.remove(), 3000);
+});
+
+// ==================== TIMER ====================
+function startTimer() {
+  updateTimerDisplay();
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+    if (state.timeLeft <= 0) {
+      loseGame();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  timerDisplay.textContent = state.timeLeft;
+  timerDisplay.classList.remove('warning', 'danger');
+  if (state.timeLeft <= 10) timerDisplay.classList.add('danger');
+  else if (state.timeLeft <= 20) timerDisplay.classList.add('warning');
+}
+
+// ==================== UI UPDATE ====================
+function updateUI() {
+  // Lives
+  const hearts = livesContainer.querySelectorAll('.heart');
+  hearts.forEach((h, i) => {
+    if (i >= state.lives) {
+      if (!h.classList.contains('lost')) {
+        h.classList.add('losing');
+        setTimeout(() => {
+          h.classList.remove('losing');
+          h.classList.add('lost');
+        }, 500);
+      }
+    } else {
+      h.classList.remove('lost', 'losing');
+    }
+  });
+
+  // Score
+  scoreDisplay.textContent = `⭐ ${state.score}`;
+
+  // Progress
+  foundCount.textContent = state.foundIcons;
+  totalCount.textContent = state.totalIcons;
+  const pct = (state.foundIcons / state.totalIcons) * 100;
+  progressBar.style.width = pct + '%';
+
+  // Combo
+  if (state.combo > 1) {
+    comboText.textContent = `🔥 x${state.combo}`;
+  } else {
+    comboText.textContent = '';
+  }
+
+  // Hint
+  hintCount.textContent = state.hintsLeft;
+  hintBtn.disabled = state.hintsLeft <= 0;
+}
+
+// ==================== WIN / LOSE ====================
+function winGame() {
+  state.gameActive = false;
+  clearInterval(state.timerInterval);
+
+  // Time bonus
+  state.score += state.timeLeft * 10;
+
+  setTimeout(() => {
+    spawnConfetti();
+    showResult(true);
+  }, 800);
+}
+
+function loseGame() {
+  state.gameActive = false;
+  clearInterval(state.timerInterval);
+
+  setTimeout(() => {
+    showResult(false);
+  }, 500);
+}
+
+function showResult(isWin) {
+  const resultIcon = $('#resultIcon');
+  const resultTitle = $('#resultTitle');
+  const resultSubtitle = $('#resultSubtitle');
+  const statTime = $('#statTime');
+  const statScore = $('#statScore');
+  const statCombo = $('#statCombo');
+  const resultButtons = $('#resultButtons');
+
+  if (isWin) {
+    resultIcon.textContent = '🎉';
+    resultTitle.textContent = 'Level Complete!';
+    resultTitle.className = 'result-title win';
+    resultSubtitle.textContent = `Semua ${state.totalIcons} objek ditemukan!`;
+  } else {
+    resultIcon.textContent = state.timeLeft <= 0 ? '⏰' : '💔';
+    resultTitle.textContent = state.timeLeft <= 0 ? 'Waktu Habis!' : 'Game Over!';
+    resultTitle.className = 'result-title lose';
+    resultSubtitle.textContent = `${state.foundIcons} dari ${state.totalIcons} objek ditemukan`;
+  }
+
+  const timeUsed = state.totalTime - Math.max(0, state.timeLeft);
+  statTime.textContent = timeUsed + 's';
+  statScore.textContent = state.score;
+  statCombo.textContent = state.maxCombo > 1 ? `x${state.maxCombo}` : '-';
+
+  resultButtons.innerHTML = '';
+
+  if (isWin && state.currentLevel < 3) {
+    resultButtons.innerHTML = `
+      <button class="result-btn btn-home" onclick="goHome()">🏠 Home</button>
+      <button class="result-btn btn-next" onclick="nextLevel()">Next Level ➡️</button>
+    `;
+  } else if (isWin && state.currentLevel >= 3) {
+    resultButtons.innerHTML = `
+      <button class="result-btn btn-home" onclick="goHome()">🏠 Home</button>
+      <button class="result-btn btn-retry" onclick="retryGame()">🔄 Main Lagi</button>
+    `;
+  } else {
+    resultButtons.innerHTML = `
+      <button class="result-btn btn-home" onclick="goHome()">🏠 Home</button>
+      <button class="result-btn btn-retry" onclick="retryGame()">🔄 Retry</button>
+    `;
+  }
+
+  showPage(resultPage);
+}
+
+function nextLevel() {
+  state.currentLevel++;
+  initGame();
+}
+
+function retryGame() {
+  initGame();
+}
+
+function goHome() {
+  clearInterval(state.timerInterval);
+  state.gameActive = false;
+  cleanGameArea();
+  showPage(uploadPage);
+}
+
+function endGame(isWin, exited) {
+  state.gameActive = false;
+  clearInterval(state.timerInterval);
+  showResult(false);
+}
+
+function cleanGameArea() {
+  // Remove all hidden icons, markers, particles from imageWrapper
+  imageWrapper.querySelectorAll('.hidden-icon, .found-marker, .tap-indicator, .hint-pulse, .particle, .floating-score').forEach(el => el.remove());
+  // Remove pointer handler
+  const newWrapper = imageWrapper.cloneNode(true);
+  imageWrapper.parentNode.replaceChild(newWrapper, imageWrapper);
+  // Reassign reference
+  // Actually we need to keep the reference, let's just clear children
+  const wrapper = imageWrapper;
+  // Keep only the img, overlay, and recreate structure
+  const img = wrapper.querySelector('#gameImage') || wrapper.querySelector('img');
+  const overlay = wrapper.querySelector('.image-overlay');
+  wrapper.innerHTML = '';
+  if (img) wrapper.appendChild(img);
+  if (overlay) wrapper.appendChild(overlay);
+}
+
+// ==================== TOUCH CONTROLS (ZOOM & DRAG) ====================
+function setupTouchControls() {
+  const wrapper = imageWrapper;
+
+  wrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
+  wrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+  wrapper.addEventListener('touchend', handleTouchEnd);
+}
+
+function handleTouchStart(e) {
+  if (e.touches.length === 1) {
+    state.isDragging = true;
+    state.lastTouchX = e.touches[0].clientX;
+    state.lastTouchY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    state.isDragging = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    state.lastTouchDist = Math.sqrt(dx*dx + dy*dy);
+  }
+}
+
+function handleTouchMove(e) {
+  if (!state.gameActive) return;
+
+  if (e.touches.length === 1 && state.isDragging) {
+    const dx = e.touches[0].clientX - state.lastTouchX;
+    const dy = e.touches[0].clientY - state.lastTouchY;
+    state.offsetX += dx;
+    state.offsetY += dy;
+    state.lastTouchX = e.touches[0].clientX;
+    state.lastTouchY = e.touches[0].clientY;
+    applyTransform();
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const delta = dist - state.lastTouchDist;
+    state.scale = Math.max(0.5, Math.min(4, state.scale + delta * 0.005));
+    state.lastTouchDist = dist;
+    applyTransform();
+  }
+}
+
+function handleTouchEnd(e) {
+  state.isDragging = false;
+}
+
+function applyTransform() {
+  const wrapper = imageWrapper;
+  const img = wrapper.querySelector('img');
+  if (img) {
+    img.style.transform = `translate(${state.offsetX}px, ${state.offsetY}px) scale(${state.scale})`;
+  }
+  // Also transform markers
+  wrapper.querySelectorAll('.found-marker, .hidden-icon').forEach(el => {
+    el.style.transform = `translate(${state.offsetX}px, ${state.offsetY}px) scale(${state.scale})`;
+  });
+}
+
+// ==================== INIT ====================
+// Prevent default touch behaviors
+document.addEventListener('touchmove', (e) => {
+  if (state.gameActive) e.preventDefault();
+}, { passive: false });
+
+// Prevent context menu
+document.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>

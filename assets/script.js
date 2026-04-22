@@ -58,6 +58,7 @@
             { id: 22, name: "Endless Traffic", category: "Arcade", mode: "singleplayer", icon: "🚗", gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", rating: 4.8, plays: "16.5K", badge: "New", desc: "Jadilah pengemudi yang handal!", url: "games/endless_traffic/", image: "assets/images/endless_traffic.jpeg" },
             { id: 23, name: "Solitaire Mobile", category: "Strategy", mode: "singleplayer", icon: "♣️", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.6, plays: "12.0K", badge: "New", desc: "Mainkan solitaire di perangkat mobile!", url: "games/solitaire_mobile/", image: "assets/images/solitaire_mobile.jpeg" },
             { id: 24, name: "Fishing Mobile", category: "Arcade", mode: "singleplayer", icon: "🎣", gradient: "linear-gradient(135deg, #f59e0b, #d97706)", rating: 4.5, plays: "9.8K", badge: "New", desc: "Temukan ikan terbesarmu!", url: "games/fishing_mobile/", image: "assets/images/fishing_master.jpeg" },
+            { id: 25, name: "Spot Icon", category: "Strategy", mode: "singleplayer", icon: "🧠", gradient: "linear-gradient(135deg, #10b981, #059669)", rating: 4.7, plays: "13.5K", badge: "Hot", desc: "Cari dimana icon berada, uji kejelian matamu!", url: "games/spot_icon/", image: "assets/images/photo_puzzle.jpeg" },
         ];
         // ============================================
         // STATE

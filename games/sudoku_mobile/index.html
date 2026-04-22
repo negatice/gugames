@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-<title>Sudoku Blue</title>
+<title>Sudoku Mobile</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,20 +17,23 @@
     <button class="level-btn btn-easy" onclick="startGame('easy')">
       <span class="level-icon">🌱</span>
       <span class="level-name">Mudah</span>
-      <span class="level-diff">30 clues</span>
+      <span class="level-diff">36 clues</span>
     </button>
     <button class="level-btn btn-medium" onclick="startGame('medium')">
       <span class="level-icon">🔥</span>
       <span class="level-name">Sedang</span>
-      <span class="level-diff">24 clues</span>
+      <span class="level-diff">28 clues</span>
     </button>
     <button class="level-btn btn-hard" onclick="startGame('hard')">
       <span class="level-icon">💀</span>
       <span class="level-name">Sulit</span>
-      <span class="level-diff">20 clues</span>
+      <span class="level-diff">22 clues</span>
     </button>
   </div>
-  <div class="menu-footer">v2.0 • Best Time: <span id="bestTimeDisplay">--:--</span></div>
+  <div class="menu-footer">
+    <span>Best: <span id="bestTimeDisplay">--:--</span></span>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">🌙</button>
+  </div>
 </div>
 
 <!-- ===== GAME SCREEN ===== -->
@@ -43,6 +46,7 @@
       <span class="lives" id="livesDisplay">❤️❤️❤️</span>
     </div>
     <div class="top-bar-section right">
+      <button class="top-btn" onclick="toggleTheme()" id="themeBtnGame" aria-label="Toggle Dark Mode">🌙</button>
       <button class="top-btn" onclick="showPause()">⏸️</button>
       <button class="top-btn" onclick="exitGame()">✕</button>
     </div>
@@ -53,91 +57,47 @@
   </div>
 
   <div class="tools-bar">
-    <button class="tool-btn" onclick="doUndo()" id="btnUndo">
-      <span class="tool-icon">🔙</span>
-      <span>Undo</span>
-    </button>
-    <button class="tool-btn" onclick="doErase()" id="btnErase">
-      <span class="tool-icon">🧽</span>
-      <span>Erase</span>
-    </button>
-    <button class="tool-btn" onclick="toggleNotes()" id="btnNotes">
-      <span class="tool-icon">✏️</span>
-      <span>Notes</span>
-    </button>
-    <button class="tool-btn" onclick="doHint()" id="btnHint">
-      <span class="tool-icon">💡</span>
-      <span>Hint</span>
-      <span class="badge" id="hintBadge">3</span>
-    </button>
+    <button class="tool-btn" onclick="doUndo()" id="btnUndo"><span class="tool-icon">🔙</span><span>Undo</span></button>
+    <button class="tool-btn" onclick="doErase()" id="btnErase"><span class="tool-icon">🧽</span><span>Erase</span></button>
+    <button class="tool-btn" onclick="toggleNotes()" id="btnNotes"><span class="tool-icon">✏️</span><span>Notes</span></button>
+    <button class="tool-btn" onclick="doHint()" id="btnHint"><span class="tool-icon">💡</span><span>Hint</span><span class="badge" id="hintBadge">3</span></button>
   </div>
 
   <div class="numpad" id="numpad"></div>
 </div>
 
-<!-- ===== GAME OVER OVERLAY ===== -->
+<!-- ===== OVERLAYS ===== -->
 <div class="overlay" id="gameOverOverlay">
   <div class="overlay-card">
-    <div class="overlay-icon">💔</div>
-    <div class="overlay-title">Game Over</div>
-    <div class="overlay-subtitle">Nyawamu habis!</div>
-    <div class="overlay-stats">
-      <div class="stat-item">
-        <div class="stat-value" id="goTime">0:00</div>
-        <div class="stat-label">Waktu</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="goLevel">-</div>
-        <div class="stat-label">Level</div>
-      </div>
-    </div>
+    <div class="overlay-icon">💔</div><div class="overlay-title">Game Over</div><div class="overlay-subtitle">Nyawamu habis!</div>
+    <div class="overlay-stats"><div class="stat-item"><div class="stat-value" id="goTime">0:00</div><div class="stat-label">Waktu</div></div><div class="stat-item"><div class="stat-value" id="goLevel">-</div><div class="stat-label">Level</div></div></div>
     <button class="overlay-btn primary" onclick="restartGame()">🔄 Main Lagi</button>
     <button class="overlay-btn secondary" onclick="goToMenu()">🏠 Menu</button>
   </div>
 </div>
 
-<!-- ===== COMPLETE OVERLAY ===== -->
 <div class="overlay" id="completeOverlay">
   <div class="overlay-card">
-    <div class="overlay-icon">🎉</div>
-    <div class="overlay-title">Completed!</div>
-    <div class="overlay-subtitle">Selamat, puzzle berhasil diselesaikan!</div>
-    <div class="overlay-stats">
-      <div class="stat-item">
-        <div class="stat-value" id="winTime">0:00</div>
-        <div class="stat-label">Waktu</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="winLives">❤️❤️❤️</div>
-        <div class="stat-label">Sisa Nyawa</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="winLevel">-</div>
-        <div class="stat-label">Level</div>
-      </div>
-    </div>
-    <button class="overlay-btn primary" onclick="restartGame()">🔄 Main Lagi</button>
-    <button class="overlay-btn secondary" onclick="goToMenu()">🏠 Menu</button>
+    <div class="overlay-icon">🎉</div><div class="overlay-title">Completed!</div><div class="overlay-subtitle">Puzzle berhasil diselesaikan!</div>
+    <div class="overlay-stats"><div class="stat-item"><div class="stat-value" id="winTime">0:00</div><div class="stat-label">Waktu</div></div><div class="stat-item"><div class="stat-value" id="winLives">❤️❤️❤️</div><div class="stat-label">Sisa Nyawa</div></div><div class="stat-item"><div class="stat-value" id="winLevel">-</div><div class="stat-label">Level</div></div></div>
+    <button class="overlay-btn primary" onclick="restartGame()">Main Lagi</button>
+    <button class="overlay-btn secondary" onclick="goToMenu()">Menu</button>
   </div>
 </div>
 
-<!-- ===== PAUSE OVERLAY ===== -->
 <div class="overlay" id="pauseOverlay">
   <div class="overlay-card">
-    <div class="overlay-icon">⏸️</div>
-    <div class="overlay-title">Pause</div>
-    <div class="overlay-subtitle">Game dijeda</div>
+    <div class="overlay-icon">⏸️</div><div class="overlay-title">Pause</div><div class="overlay-subtitle">Game dijeda</div>
     <div class="pause-list">
       <div class="pause-item"><span>⏱️ Waktu</span><span id="pauseTime">0:00</span></div>
       <div class="pause-item"><span>📊 Level</span><span id="pauseLevel">-</span></div>
       <div class="pause-item"><span>❤️ Nyawa</span><span id="pauseLives">❤️❤️❤️</span></div>
     </div>
-    <button class="overlay-btn primary" onclick="resumeGame()">▶️ Lanjut</button>
-    <button class="overlay-btn secondary" onclick="restartGame()">🔄 Restart</button>
-    <button class="overlay-btn secondary" onclick="goToMenu()">🏠 Menu</button>
+    <button class="overlay-btn primary" onclick="resumeGame()">Lanjut</button>
+    <button class="overlay-btn secondary" onclick="restartGame()">Restart</button>
+    <button class="overlay-btn secondary" onclick="goToMenu()">Menu</button>
   </div>
 </div>
-
 <script src="script.js" defer></script>
 </body>
 </html>

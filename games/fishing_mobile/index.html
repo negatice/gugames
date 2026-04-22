@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+</style>
 <title>🎣 Fishing Master</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
@@ -10,26 +17,28 @@
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 
   body {
-    font-family: 'Nunito', sans-serif;
-    background: #0a1628;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden;
-  }
+  font-family: 'Nunito', sans-serif;
+  background: #0a1628;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
 
 /* ===== GAME WRAPPER ===== */
 #game-wrapper {
-  position: relative;
-  width: 100vw;
-  height: 100dvh; /* Dynamic viewport height: otomatis menyesuaikan tinggi layar mobile */
+  position: fixed;        /* ← fixed, bukan relative */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;           /* ← 100% dari html/body */
   max-width: 450px;
   overflow: hidden;
   background: #0a1628;
-  margin: 0 auto;
   padding: 0;
-  overscroll-behavior: none; /* Mencegah scroll saat bermain */
+  overscroll-behavior: none;
   touch-action: none;
 }
 

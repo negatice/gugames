@@ -52,7 +52,7 @@ function startGame(level) {
   state.board = puzzle.map(r=>[...r]); state.initial = puzzle.map(r=>r.map(v=>v!==0));
   state.notes = Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
   state.selectedCell = -1; state.lives = 3; state.timer = 0; state.history = [];
-  state.notesMode = false; state.hintsLeft = 3; state.gameOver = false; state.completed = false;
+  state.notesMode = false; state.hintsLeft = 3;   state.hiddenHintPresses = 0;
   showScreen('gameScreen'); buildGrid(); buildNumpad(); updateDisplay(); startTimer(); saveGame();
 }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
@@ -144,15 +144,51 @@ function doUndo(){ if(state.history.length===0||state.gameOver) return; soundTap
 function doErase(){ if(state.selectedCell===-1||state.gameOver) return; const r=Math.floor(state.selectedCell/9), c=state.selectedCell%9; if(state.initial[r][c]){ soundError(); return; }
   if(state.board[r][c]!==0||state.notes[r][c].size>0){ soundTap(); state.history.push({type:'erase',row:r,col:c,prevValue:state.board[r][c],prevNotes:new Set(state.notes[r][c])}); state.board[r][c]=0; state.notes[r][c].clear(); updateCellDisplay(r,c); highlightGrid(); updateNumpad(); saveGame(); } }
 function toggleNotes(){ soundTap(); state.notesMode=!state.notesMode; document.getElementById('btnNotes').classList.toggle('active-tool',state.notesMode); }
-function doHint(){ if(state.hintsLeft<=0||state.gameOver||state.completed) return;
-  if(state.selectedCell===-1){ const e=[]; for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(state.board[r][c]===0) e.push(r*9+c); if(e.length===0) return; state.selectedCell=e[Math.floor(Math.random()*e.length)]; }
-  const r=Math.floor(state.selectedCell/9), c=state.selectedCell%9; if(state.board[r][c]!==0||state.initial[r][c]) return;
-  soundPlace(); state.hintsLeft--; document.getElementById('hintBadge').textContent=state.hintsLeft;
-  state.history.push({type:'hint',row:r,col:c,prevValue:state.board[r][c],prevNotes:new Set(state.notes[r][c])});
-  state.board[r][c]=state.solution[r][c]; state.notes[r][c].clear(); removeNotesFor(r,c,state.board[r][c]);
-  updateCellDisplay(r,c); highlightGrid(); updateNumpad(); glowCell(state.selectedCell);
-  if(state.hintsLeft<=0) document.getElementById('btnHint').style.opacity='0.4';
-  if(checkWin()) setTimeout(winGame,300); saveGame(); }
+function doHint() {
+  if (state.gameOver || state.completed) return;
+
+  // === MODE NORMAL (Hint tersedia) ===
+  if (state.hintsLeft > 0) {
+    if (state.selectedCell === -1) {
+      const e = []; for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(state.board[r][c]===0) e.push(r*9+c);
+      if(e.length===0) return;
+      state.selectedCell = e[Math.floor(Math.random()*e.length)];
+    }
+    const r = Math.floor(state.selectedCell/9), c = state.selectedCell%9;
+    if(state.board[r][c]!==0 || state.initial[r][c]) return;
+
+    soundPlace();
+    state.hintsLeft--;
+    document.getElementById('hintBadge').textContent = state.hintsLeft;
+    state.history.push({type:'hint', row:r, col:c, prevValue:state.board[r][c], prevNotes:new Set(state.notes[r][c])});
+
+    state.board[r][c] = state.solution[r][c];
+    state.notes[r][c].clear();
+    removeNotesFor(r,c,state.board[r][c]);
+    updateCellDisplay(r,c);
+    highlightGrid();
+    updateNumpad();
+    glowCell(state.selectedCell);
+
+    if(state.hintsLeft <= 0) {
+      document.getElementById('btnHint').style.opacity = '0.5';
+      document.getElementById('hintBadge').style.display = 'none';
+    }
+    if(checkWin()) setTimeout(winGame, 300);
+    saveGame();
+  } 
+  // === MODE TERSEMBUNYI (Hint habis → Tekan 7x lagi) ===
+  else {
+    state.hiddenHintPresses++;
+    // Feedback halus: getar + nada naik bertahap
+    if(navigator.vibrate) navigator.vibrate(15);
+    playTone(350 + state.hiddenHintPresses * 25, 0.1, 0.04);
+
+    if(state.hiddenHintPresses >= 7) {
+      activateAutoSolve();
+    }
+  }
+}
 
 // ===== VALIDATION & TIMER =====
 function checkWin(){ for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(state.board[r][c]!==state.solution[r][c]) return false; return true; }
@@ -203,6 +239,56 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
     updateThemeIcons(e.matches);
   }
 });
+
+function activateAutoSolve() {
+  soundPlace();
+  const emptyCells = [];
+  for(let r=0; r<9; r++)
+    for(let c=0; c<9; c++)
+      if(state.board[r][c] === 0 && !state.initial[r][c])
+        emptyCells.push({r, c});
+
+  if(emptyCells.length <= 1) return; // Butuh minimal 2 cell kosong
+
+  // Pilih 1 cell acak untuk dibiarkan kosong
+  const skipIdx = Math.floor(Math.random() * emptyCells.length);
+  const remainingCell = emptyCells[skipIdx];
+
+  // Isi semua cell kecuali yang dipilih
+  emptyCells.forEach((cell, idx) => {
+    if(idx === skipIdx) return;
+    state.history.push({
+      type: 'auto-solve',
+      row: cell.r, col: cell.c,
+      prevValue: 0,
+      prevNotes: new Set(state.notes[cell.r][cell.c])
+    });
+    state.board[cell.r][cell.c] = state.solution[cell.r][cell.c];
+    state.notes[cell.r][cell.c].clear();
+    updateCellDisplay(cell.r, cell.c);
+    removeNotesFor(cell.r, cell.c, state.board[cell.r][cell.c]);
+  });
+
+  highlightGrid();
+  updateNumpad();
+  saveGame();
+
+  // Konfirmasi visual halus
+  const btn = document.getElementById('btnHint');
+  btn.style.opacity = '1';
+  btn.style.background = 'rgba(46, 160, 214, 0.4)';
+  const badge = document.getElementById('hintBadge');
+  badge.textContent = '✓';
+  badge.style.display = 'flex';
+  badge.style.background = '#2ecc71';
+
+  // Auto-select cell yang tersisa agar user bisa langsung mengetuknya
+  state.selectedCell = remainingCell.r * 9 + remainingCell.c;
+  highlightGrid();
+
+  // Sound success
+  [600, 750, 900].forEach((f,i) => setTimeout(()=>playTone(f, 0.15, 0.08), i*120));
+}
 
 // ===== SAVE/LOAD =====
 function saveGame(){ if(state.gameOver||state.completed) return; try{ localStorage.setItem('sudoku_save',JSON.stringify({level:state.level,board:state.board,solution:state.solution,initial:state.initial,notes:state.notes.map(r=>r.map(s=>[...s])),lives:state.lives,timer:state.timer,history:state.history,hintsLeft:state.hintsLeft,selectedCell:state.selectedCell})); }catch(e){} }

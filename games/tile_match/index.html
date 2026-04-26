@@ -648,8 +648,10 @@
     <div class="result-icon">😰</div>
     <h2>Tidak Ada Gerakan!</h2>
     <p>Tidak ada pasangan tile yang tersedia.</p>
-    <button class="modal-btn primary" onclick="closeModal('noMovesModal'); useShuffle();">🔀 Acak Board</button>
-    <button class="modal-btn secondary" onclick="closeModal('noMovesModal'); restartLevel();">🔄 Ulangi Level</button>
+    // GANTI JADI:
+    <button class="modal-btn primary" onclick="closeModal('noMovesModal'); gameState.isPlaying = true; startTimer(); useShuffle();">🔀 Acak Board</button>
+    // GANTI JADI:
+    <button class="modal-btn secondary" onclick="closeModal('noMovesModal'); gameState.isPlaying = true; restartLevel();">🔄 Ulangi Level</button>
     <button class="modal-btn danger" onclick="closeModal('noMovesModal'); showScreen('menuScreen'); stopGame();">🏠 Menu Utama</button>
   </div>
 </div>
@@ -876,7 +878,7 @@ function startLevel(levelIdx) {
   gameState.level = levelIdx;
   gameState.score = 0; gameState.combo = 0; gameState.maxCombo = 0;
   gameState.lastMatchTime = 0; gameState.timer = 0; gameState.selected = null;
-  gameState.hints = 3; gameState.shuffles = 2;
+  gameState.hints = 3; gameState.shuffles = 5;
   gameState.hintsUsed = 0; gameState.shufflesUsed = 0;
   gameState.isPlaying = true; gameState.hintTiles = [];
 
@@ -1226,7 +1228,8 @@ function onWin() {
 }
 
 function showNoMoves() {
-  stopGame();
+  // Jangan stop game, hanya pause timer
+  if (gameState.timerInterval) { clearInterval(gameState.timerInterval); gameState.timerInterval = null; }
   document.getElementById('noMovesModal').classList.add('active');
 }
 
@@ -1266,9 +1269,10 @@ function clearHint() {
   gameState.hintTiles = [];
 }
 
-function useShuffle() {
-  if (gameState.shuffles <= 0) return;
-  gameState.shuffles--; gameState.shufflesUsed++;
+// GANTI JADI:
+function useShuffle(auto = false) {
+  if (gameState.shuffles <= 0 && !auto) return;
+  if (!auto) { gameState.shuffles--; gameState.shufflesUsed++; }
   clearHint();
   if (gameState.selected !== null) {
     gameState.tiles[gameState.selected].element.classList.remove('selected');
@@ -1285,10 +1289,10 @@ function useShuffle() {
   playSound('shuffle');
   updateBlockedState();
   updateUI();
+  // GANTI JADI:
   setTimeout(() => {
     if (gameState.isPlaying && !hasValidMoves()) {
-      if (gameState.shuffles > 0) useShuffle();
-      else showNoMoves();
+      useShuffle(true); // auto shuffle, tidak kurangi jatah
     }
   }, 650);
 }

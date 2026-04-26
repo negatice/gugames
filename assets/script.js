@@ -59,6 +59,7 @@
             { id: 23, name: "Solitaire Mobile", category: "Strategy", mode: "singleplayer", icon: "♣️", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", rating: 4.6, plays: "12.0K", badge: "New", desc: "Mainkan solitaire di perangkat mobile!", url: "games/solitaire_mobile/", image: "assets/images/solitaire_mobile.jpeg" },
             { id: 24, name: "Fishing Mobile", category: "Arcade", mode: "singleplayer", icon: "🎣", gradient: "linear-gradient(135deg, #f59e0b, #d97706)", rating: 4.5, plays: "9.8K", badge: "New", desc: "Temukan ikan terbesarmu!", url: "games/fishing_mobile/", image: "assets/images/fishing_mobile.jpeg" },
             { id: 25, name: "Spot Icon", category: "Strategy", mode: "singleplayer", icon: "🧠", gradient: "linear-gradient(135deg, #10b981, #059669)", rating: 4.7, plays: "13.5K", badge: "Hot", desc: "Cari dimana icon berada, uji kejelian matamu!", url: "games/find_bacteria/", image: "assets/images/find_bacteria.jpeg" },
+            { id: 26, name: "Tile Match", category: "Strategy", mode: "singleplayer", icon: "🧠", gradient: "linear-gradient(135deg, #10b981, #059669)", rating: 4.7, plays: "13.5K", badge: "New", desc: "Pasangkan Tile yang ada dan habiskan semuanya", url: "games/tile_match/", image: "assets/images/tile_match.jpeg" },
         ];
         // ============================================
         // STATE

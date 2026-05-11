@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="theme-color" content="#08080f"/>
+  <title>🐍 Chain Blast</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    html,body{width:100%;height:100%;overflow:hidden;position:fixed}
+    body{font-family:'Rajdhani',sans-serif;background:#08080f;color:#fff;user-select:none}
+    canvas{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
+    #ui{
+      position:absolute;top:env(safe-area-inset-top,12px);left:0;width:100%;
+      padding:0 16px;display:flex;align-items:center;
+      z-index:10;pointer-events:none;gap:10px;
+    }
+    #score{
+      font-family:'Orbitron',monospace;
+      background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);
+      padding:8px 14px;border-radius:20px;font-size:14px;letter-spacing:1px;white-space:nowrap;
+    }
+    #levelBadge{
+      font-family:'Orbitron',monospace;font-size:12px;letter-spacing:1px;
+      background:rgba(255,165,0,0.15);border:1px solid rgba(255,165,0,0.3);
+      padding:8px 12px;border-radius:20px;white-space:nowrap;color:#ffa502;
+    }
+    #progressContainer{
+      flex:1;height:8px;background:rgba(255,255,255,0.07);
+      border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.09);
+    }
+    #progressBar{
+      height:100%;width:0%;
+      background:linear-gradient(90deg,#4ecdc4,#ffa502,#ff6b6b);
+      border-radius:4px;transition:width 0.12s;
+    }
+    #progressBar.danger{background:linear-gradient(90deg,#ff6b6b,#c0392b);animation:dp .35s infinite}
+    @keyframes dp{0%,100%{opacity:1}50%{opacity:.5}}
+
+    #colorSelector{
+      position:absolute;bottom:env(safe-area-inset-bottom,12px);left:50%;transform:translateX(-50%);
+      display:flex;gap:12px;padding:12px 18px;
+      background:rgba(8,8,15,0.95);border-radius:50px;
+      border:1px solid rgba(255,255,255,0.13);backdrop-filter:blur(12px);
+      z-index:20;pointer-events:auto;box-shadow:0 4px 24px rgba(0,0,0,0.6);
+    }
+    .colorBtn{
+      width:58px;height:58px;border-radius:50%;
+      border:2px solid rgba(255,255,255,0.75);cursor:pointer;
+      position:relative;overflow:hidden;transition:transform .1s;font-size:0;
+    }
+    .colorBtn:active{transform:scale(0.9)}
+    .colorBtn::before{
+      content:'';position:absolute;inset:0;border-radius:50%;
+      background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.5) 0%,transparent 60%);
+      z-index:1;pointer-events:none;
+    }
+    .colorBtn.red   {background:radial-gradient(circle at 40% 35%,#ff9a9a,#c0392b);box-shadow:0 0 12px #ff6b6b55}
+    .colorBtn.blue  {background:radial-gradient(circle at 40% 35%,#90d7ff,#1971c2);box-shadow:0 0 12px #4dabf755}
+    .colorBtn.green {background:radial-gradient(circle at 40% 35%,#95f0aa,#2f9e44);box-shadow:0 0 12px #51cf6655}
+    .colorBtn.yellow{background:radial-gradient(circle at 40% 35%,#ffe066,#e67700);box-shadow:0 0 12px #ffd43b55}
+    .colorBtn.cooldown{pointer-events:none;opacity:.55}
+    .colorBtn.cooldown::after{content:'';position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.45);z-index:2}
+
+    #comboDisplay{
+      position:absolute;top:42%;left:50%;
+      transform:translate(-50%,-50%) scale(0);
+      font-family:'Orbitron',monospace;font-size:28px;font-weight:900;
+      color:#ffd700;text-shadow:0 0 10px #ffa502,0 0 20px #ff6b6b;
+      z-index:30;pointer-events:none;white-space:nowrap;
+    }
+    #comboDisplay.pop{animation:cPop .48s cubic-bezier(.17,.67,.4,1.4) forwards}
+    @keyframes cPop{
+      0%{transform:translate(-50%,-50%) scale(.1);opacity:0}
+      38%{transform:translate(-50%,-50%) scale(1.3);opacity:1}
+      100%{transform:translate(-50%,-50%) scale(1);opacity:0}
+    }
+
+    #gameOver{
+      position:absolute;inset:0;background:rgba(0,0,0,.92);
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      z-index:100;text-align:center;padding:24px;backdrop-filter:blur(8px);
+    }
+    #gameOver h2{font-family:'Orbitron',monospace;font-size:32px;letter-spacing:2px;margin-bottom:12px;color:#ff6b6b;text-shadow:0 0 20px #ff6b6b88}
+    #gameOver p{font-size:18px;color:#bbb;margin:6px 0}
+    #finalScore{font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:#ffd700;margin:14px 0 6px}
+    #bestScore{font-family:'Orbitron',monospace;font-size:16px;color:#aaa;margin-bottom:6px}
+    #restartBtn{
+      margin-top:20px;padding:14px 32px;
+      font-family:'Orbitron',monospace;font-size:14px;letter-spacing:1px;
+      background:linear-gradient(135deg,#00b894,#00cec9);
+      border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;
+      box-shadow:0 4px 14px rgba(0,184,148,.4);transition:transform .1s;
+    }
+    #restartBtn:active{transform:scale(.93)}
+    
+    #mobileHint{
+      position:absolute;inset:0;background:rgba(8,8,15,0.95);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      z-index:200;text-align:center;padding:24px;color:#aaa;font-size:16px;
+    }
+    #mobileHint.hidden{display:none}
+    #mobileHint h3{color:#fff;font-family:'Orbitron';margin-bottom:12px;font-size:20px}
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="mobileHint">
+  <h3>📱 Mobile Only</h3>
+  <p>Game ini dioptimalkan untuk layar mobile.<br>Putar perangkat ke mode portrait.</p>
+</div>
+
+<div id="ui">
+  <div id="score">⭐ <span id="scoreVal">0</span></div>
+  <div id="levelBadge">LV <span id="lvVal">1</span></div>
+  <div id="progressContainer"><div id="progressBar"></div></div>
+</div>
+
+<div id="comboDisplay">COMBO ×<span id="comboN">2</span> 🔥</div>
+
+<div id="colorSelector">
+  <button class="colorBtn red"    data-color="red"></button>
+  <button class="colorBtn blue"   data-color="blue"></button>
+  <button class="colorBtn green"  data-color="green"></button>
+  <button class="colorBtn yellow" data-color="yellow"></button>
+</div>
+
+<div id="gameOver">
+  <h2>💥 GAME OVER</h2>
+  <p id="goMsg">Bola mencapai zona bahaya!</p>
+  <div id="finalScore">0</div>
+  <div id="bestScore">BEST: 0</div>
+  <button id="restartBtn">▶ MAIN LAGI</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  🐍 CHAIN BLAST — Fixed: Double-S Path, Spawn Fix, Cooldown Bug
+//  Fixes:
+//   • Compact double-S path (fits screen, danger zone visible)
+//   • Initial chain spawns from TOP (not middle)
+//   • Color button cooldown properly resets
+// ══════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// Mobile check
+function isMobile(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 768;
+}
+function updateMobileHint(){
+  document.getElementById('mobileHint').classList.toggle('hidden', isMobile() || localStorage.getItem('hintDismissed'));
+}
+document.getElementById('mobileHint').addEventListener('click', (e)=>{
+  if(e.target.id==='mobileHint'){ localStorage.setItem('hintDismissed','1'); updateMobileHint(); }
+});
+
+function resize(){ 
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+  canvas.width = window.innerWidth; 
+  canvas.height = window.innerHeight; 
+}
+window.addEventListener('resize', ()=>{ resize(); buildPath(); });
+window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ resize(); buildPath(); }, 100); });
+resize();
+updateMobileHint();
+
+// ── Constants ─────────────────────────────────────────
+const COLORS = { red:'#ff6b6b', blue:'#4dabf7', green:'#51cf66', yellow:'#ffd43b' };
+const CKEYS  = Object.keys(COLORS);
+const BR     = 12;
+const GAP    = BR * 2.4;
+const SPEED  = 0.024;
+const MATCH  = 3;
+const INIT_N = 6;
+const MAX_N  = 30;
+const SPAWN_BASE = 2800;
+const SPAWN_MIN  = 700;
+const LEVEL_SCORE = 70;
+const GOAL_ZONE  = 0.94;  // Danger zone at 94% of path (visible above UI)
+
+// ── Path state ─────────────────────────────────────────
+let PATH=[], PATH_LEN=0, SPAWN_POS, GOAL_POS;
+
+function buildPath(){
+  const W=canvas.width, H=canvas.height;
+
+  // ═══════════════════════════════════════════════════
+  //  DOUBLE-S PATH (compact, fits screen, visible goal)
+  //  Control points: top → right-up → center → left-down → right-down → bottom
+  // ═══════════════════════════════════════════════════
+  const cp = [
+    [W*.50, H*.06],   // START: top center (spawn)
+    [W*.72, H*.24],   // Curve right (upper)
+    [W*.50, H*.42],   // Back through center
+    [W*.28, H*.60],   // Curve left (middle)
+    [W*.58, H*.78],   // Curve right (lower)
+    [W*.50, H*.92],   // END: bottom center (above UI, danger zone visible)
+  ];
+
+  const SAMPLES=380;
+  const raw=[];
+
+  function cr(p0,p1,p2,p3,t){
+    const t2=t*t, t3=t2*t;
+    return {
+      x:0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+      y:0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
+    };
+  }
+
+  const n=cp.length;
+  for(let s=0;s<SAMPLES;s++){
+    const t=s/(SAMPLES-1), tf=t*(n-1);
+    const i=Math.min(Math.floor(tf),n-2), lt=tf-i;
+    raw.push(cr(cp[Math.max(0,i-1)],cp[i],cp[Math.min(n-1,i+1)],cp[Math.min(n-1,i+2)],lt));
+  }
+
+  const cum=[0];
+  for(let i=1;i<raw.length;i++)
+    cum.push(cum[i-1]+Math.hypot(raw[i].x-raw[i-1].x, raw[i].y-raw[i-1].y));
+  
+  PATH_LEN=cum[cum.length-1];
+  PATH=raw.map((p,i)=>({x:p.x,y:p.y,d:cum[i]}));
+  
+  SPAWN_POS = {x:PATH[0].x, y:PATH[0].y};
+  GOAL_POS  = {x:PATH[PATH.length-1].x, y:PATH[PATH.length-1].y};
+}
+
+function pathAt(d){
+  d=Math.max(0,Math.min(PATH_LEN,d));
+  let lo=0,hi=PATH.length-1;
+  while(lo<hi-1){ const m=(lo+hi)>>1; if(PATH[m].d<=d) lo=m; else hi=m; }
+  const seg=PATH[hi].d-PATH[lo].d||1, t=(d-PATH[lo].d)/seg;
+  return {x:PATH[lo].x+(PATH[hi].x-PATH[lo].x)*t, y:PATH[lo].y+(PATH[hi].y-PATH[lo].y)*t};
+}
+
+// ── Game state ─────────────────────────────────────────
+let gs, bestScore=0;
+
+function makeGs(){
+  return {
+    score:0, combo:0, level:1,
+    chain:[],
+    spawners:[],
+    projs:[],
+    particles:[],
+    lastSpawnTick:0,
+    gameOver:false,
+    lastTs:0,
+    audioCtx:null,
+    cd:{ red:false, blue:false, green:false, yellow:false }  // FIX: Pre-initialize all colors
+  };
+}
+
+// ── Audio ──────────────────────────────────────────────
+function initAudio(){ if(!gs.audioCtx) gs.audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }
+function beep(f,d,t='sine',v=.24){
+  if(!gs.audioCtx)return;
+  const o=gs.audioCtx.createOscillator(),g=gs.audioCtx.createGain();
+  o.connect(g);g.connect(gs.audioCtx.destination);
+  const now=gs.audioCtx.currentTime;
+  o.type=t;o.frequency.setValueAtTime(f,now);
+  g.gain.setValueAtTime(v,now);g.gain.exponentialRampToValueAtTime(.001,now+d);
+  o.start(now);o.stop(now+d);
+}
+function sfx(n){
+  switch(n){
+    case 'shoot': beep(400,.06,'sine',.16);break;
+    case 'pop':   beep(600,.06,'sine',.26);break;
+    case 'combo': [600,760,940].forEach(f=>beep(f,.1,'sine',.17));break;
+    case 'lose':  beep(130,.55,'sawtooth',.3);break;
+    case 'lvup':  [500,650,820].forEach((f,i)=>setTimeout(()=>beep(f,.1,'sine',.2),i*80));break;
+  }
+}
+
+// ── Ball helpers ──────────────────────────────────────
+function makeBall(color,dist,isSpawner=false){
+  const p=pathAt(dist);
+  return {dist,x:p.x,y:p.y,color,scale:isSpawner?0.1:1,removing:false,isSpawner};
+}
+
+// ═══════════════════════════════════════════════════
+//  FIX #2: Initial chain spawns from TOP (near spawn point)
+// ═══════════════════════════════════════════════════
+function initChain(){
+  gs.chain=[];
+  gs.spawners=[];
+  for(let i=0;i<INIT_N;i++){
+    // Start from dist=60 (near spawn), not middle of path
+    const dist = 60 + i * GAP;
+    gs.chain.push(makeBall(CKEYS[Math.floor(Math.random()*CKEYS.length)], dist));
+  }
+}
+
+function spawnInterval(){
+  return Math.max(SPAWN_MIN, SPAWN_BASE - (gs.level-1)*160);
+}
+
+function spawnNewBall(){
+  const color = CKEYS[Math.floor(Math.random()*CKEYS.length)];
+  const b = makeBall(color, 0, true);
+  b.targetDist = null;
+  gs.spawners.push(b);
+}
+
+// ── Shooter & projectile ───────────────────────────────
+function shooterPos(){
+  return { x:canvas.width/2, y:canvas.height - 26 };
+}
+
+// ═══════════════════════════════════════════════════
+//  FIX #3: Cooldown properly resets with error handling
+// ═══════════════════════════════════════════════════
+function shoot(color){
+  if(gs.gameOver || gs.cd[color] || gs.chain.length===0) return;
+  initAudio(); sfx('shoot');
+
+  gs.cd[color]=true;
+  const btn=document.querySelector('.colorBtn.'+color);
+  if(btn) btn.classList.add('cooldown');
+  
+  // Safe timeout with fallback reset
+  setTimeout(()=>{
+    try{
+      gs.cd[color]=false;
+      if(btn) btn.classList.remove('cooldown');
+    }catch(e){ console.warn('Cooldown reset error:',e); }
+  },400);
+
+  const front=gs.chain[0];
+  const sp=shooterPos();
+  const dx=front.x-sp.x, dy=front.y-sp.y;
+  const len=Math.hypot(dx,dy)||1;
+  const SPD=0.75;
+
+  gs.projs.push({
+    x:sp.x, y:sp.y,
+    vx:(dx/len)*SPD, vy:(dy/len)*SPD,
+    color, trail:[]
+  });
+}
+
+// ── Insert at FRONT of chain ───────────────────────────
+function insertFront(color){
+  if(gs.chain.length>=MAX_N) return;
+  const front=gs.chain[0];
+  const newDist = front.dist + GAP;
+  const nb = makeBall(color, newDist);
+  nb.scale = 0.1;
+  gs.chain.unshift(nb);
+  
+  for(let i=1;i<gs.chain.length;i++){
+    const maxAllowed = gs.chain[i-1].dist - GAP;
+    if(gs.chain[i].dist > maxAllowed){
+      gs.chain[i].dist = maxAllowed;
+      const p=pathAt(gs.chain[i].dist);
+      gs.chain[i].x=p.x; gs.chain[i].y=p.y;
+    }
+  }
+  checkMatches(0);
+}
+
+// ── Match checking ─────────────────────────────────────
+function checkMatches(idx){
+  if(idx<0||idx>=gs.chain.length) return;
+  const col=gs.chain[idx].color;
+  let L=idx,R=idx;
+  while(L>0 && gs.chain[L-1].color===col && !gs.chain[L-1].removing) L--;
+  while(R<gs.chain.length-1 && gs.chain[R+1].color===col && !gs.chain[R+1].removing) R++;
+  if(R-L+1<MATCH) return;
+
+  for(let i=L;i<=R;i++) gs.chain[i].removing=true;
+  gs.chain.slice(L,R+1).forEach(b=>explode(b.x,b.y,COLORS[b.color]));
+
+  const pts=(R-L+1)*10 + gs.combo*5;
+  gs.score+=pts;
+  gs.combo++;
+
+  const newLevel=Math.floor(gs.score/LEVEL_SCORE)+1;
+  if(newLevel>gs.level){ gs.level=newLevel; sfx('lvup'); document.getElementById('lvVal').textContent=gs.level; }
+
+  document.getElementById('scoreVal').textContent=gs.score;
+  if(gs.combo>1){ showCombo(gs.combo); sfx('combo'); } else sfx('pop');
+
+  setTimeout(()=>{
+    gs.chain=gs.chain.filter(b=>!b.removing);
+    chainReact();
+  },180);
+}
+
+function chainReact(){
+  for(let i=0;i<gs.chain.length-2;i++){
+    const c=gs.chain[i].color;
+    if(!gs.chain[i].removing&&gs.chain[i+1].color===c&&gs.chain[i+2].color===c){
+      checkMatches(i+1); return;
+    }
+  }
+  if(gs.combo>0) setTimeout(()=>{ if(!gs.chain.some(b=>b.removing)) gs.combo=0; },1200);
+}
+
+// ── Particles ──────────────────────────────────────────
+function explode(x,y,col){
+  for(let i=0;i<10;i++){
+    const a=(Math.PI*2*i/10)+Math.random()*.5, s=.5+Math.random()*1.2;
+    gs.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:2+Math.random()*3,color:col,life:1,decay:.028+Math.random()*.01});
+  }
+}
+
+function showCombo(n){
+  const el=document.getElementById('comboDisplay');
+  document.getElementById('comboN').textContent=n;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+
+// ── HUD ────────────────────────────────────────────────
+function updateHUD(){
+  if(!gs.chain.length){ document.getElementById('progressBar').style.width='0%'; return; }
+  const maxD=Math.max(...gs.chain.map(b=>b.dist));
+  const pct=Math.min(100,maxD/PATH_LEN*100);
+  const bar=document.getElementById('progressBar');
+  bar.style.width=pct+'%';
+  bar.classList.toggle('danger',pct>80);
+  if(maxD>=PATH_LEN*GOAL_ZONE&&!gs.gameOver) endGame();
+}
+
+function endGame(){
+  gs.gameOver=true;
+  if(gs.score>bestScore) bestScore=gs.score;
+  document.getElementById('finalScore').textContent='SCORE: '+gs.score;
+  document.getElementById('bestScore').textContent ='BEST: '+bestScore;
+  document.getElementById('goMsg').textContent='Bola mencapai zona bahaya! Lv '+gs.level;
+  document.getElementById('gameOver').style.display='flex';
+  sfx('lose');
+}
+
+// ═══════════════════════════════════════════════════
+//  FIX #3: Reset cooldown state on game restart
+// ═══════════════════════════════════════════════════
+function resetGame(){
+  gs=makeGs(); 
+  buildPath(); 
+  initChain();
+  document.getElementById('scoreVal').textContent='0';
+  document.getElementById('lvVal').textContent='1';
+  document.getElementById('progressBar').style.width='0%';
+  document.getElementById('progressBar').classList.remove('danger');
+  document.getElementById('gameOver').style.display='none';
+  
+  // Reset all color buttons visually
+  document.querySelectorAll('.colorBtn').forEach(b=>{
+    b.classList.remove('cooldown');
+  });
+}
+
+// ── Draw helpers ───────────────────────────────────────
+function shade(hex,amt){
+  const n=parseInt(hex.replace('#',''),16);
+  const cl=v=>Math.max(0,Math.min(255,v));
+  return '#'+[cl((n>>16)+amt),cl(((n>>8)&255)+amt),cl((n&255)+amt)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function drawBall(x,y,colorKey,radius,alpha){
+  if(!alpha||radius<.5)return;
+  const col=COLORS[colorKey];
+  ctx.save(); ctx.globalAlpha=alpha;
+  const gl=ctx.createRadialGradient(x,y,0,x,y,radius*2);
+  gl.addColorStop(0,col+'44'); gl.addColorStop(1,'transparent');
+  ctx.beginPath(); ctx.arc(x,y,radius*2,0,Math.PI*2); ctx.fillStyle=gl; ctx.fill();
+  const gr=ctx.createRadialGradient(x-radius*.3,y-radius*.32,0,x,y,radius);
+  gr.addColorStop(0,'#fff'); gr.addColorStop(.28,col); gr.addColorStop(1,shade(col,-38));
+  ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.fillStyle=gr; ctx.fill();
+  ctx.beginPath(); ctx.arc(x-radius*.22,y-radius*.24,radius*.19,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.65)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=1.2; ctx.stroke();
+  ctx.restore();
+}
+
+function drawGoalIcon(x,y,ts){
+  const pulse=.85+Math.sin(ts*.004)*.15;
+  const r=BR*2.4*pulse;
+  ctx.save();
+  const gl=ctx.createRadialGradient(x,y,0,x,y,r*2.8);
+  gl.addColorStop(0,'rgba(255,80,80,0.28)'); gl.addColorStop(1,'transparent');
+  ctx.beginPath(); ctx.arc(x,y,r*2.8,0,Math.PI*2); ctx.fillStyle=gl; ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=`rgba(30,0,0,0.78)`; ctx.fill();
+  ctx.strokeStyle=`rgba(255,80,80,${0.65+Math.sin(ts*.004)*.35})`; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.font=`${Math.round(r*1.2)}px serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('☠', x, y+1);
+  ctx.restore();
+}
+
+function drawPath(ts){
+  if(!PATH.length)return;
+  ctx.beginPath();
+  ctx.moveTo(PATH[0].x,PATH[0].y);
+  for(let i=1;i<PATH.length;i++) ctx.lineTo(PATH[i].x,PATH[i].y);
+  ctx.strokeStyle='rgba(255,255,255,0.05)';
+  ctx.lineWidth=BR*2.8; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(PATH[0].x,PATH[0].y);
+  for(let i=1;i<PATH.length;i++) ctx.lineTo(PATH[i].x,PATH[i].y);
+  ctx.strokeStyle='rgba(78,205,196,0.1)'; ctx.lineWidth=1.6; ctx.stroke();
+
+  // Spawn indicator at top
+  ctx.beginPath(); ctx.arc(SPAWN_POS.x,SPAWN_POS.y,BR*1.6,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.4;
+  ctx.setLineDash([4,5]); ctx.stroke(); ctx.setLineDash([]);
+
+  drawGoalIcon(GOAL_POS.x,GOAL_POS.y,ts);
+
+  const sp=shooterPos();
+  ctx.beginPath(); ctx.arc(sp.x,sp.y,BR*1.4,0,Math.PI*2);
+  ctx.fillStyle='rgba(78,205,196,0.12)'; ctx.fill();
+  ctx.strokeStyle='rgba(78,205,196,0.55)'; ctx.lineWidth=1.3;
+  ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+// ── Main loop ───────────────────────────────────────────
+function loop(ts){
+  if(!gs.lastTs) gs.lastTs=ts;
+  const dt=Math.min(ts-gs.lastTs,50);
+  gs.lastTs=ts;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawPath(ts);
+
+  if(!gs.gameOver){
+    if(ts-gs.lastSpawnTick > spawnInterval()){
+      spawnNewBall();
+      gs.lastSpawnTick=ts;
+    }
+
+    // Update spawners
+    for(let i=gs.spawners.length-1;i>=0;i--){
+      const s=gs.spawners[i];
+      s.dist += SPEED * dt * 1.1;
+      const p=pathAt(s.dist);
+      s.x=p.x; s.y=p.y;
+      if(s.scale<1) s.scale=Math.min(1,s.scale+0.05);
+      
+      if(gs.chain.length>0){
+        const tail=gs.chain[gs.chain.length-1];
+        if(s.dist >= tail.dist - GAP*0.8 && s.dist <= tail.dist + GAP*0.8){
+          const newBall=makeBall(s.color, tail.dist - GAP);
+          newBall.scale=s.scale;
+          gs.chain.push(newBall);
+          gs.spawners.splice(i,1);
+          for(let j=gs.chain.length-2;j>=0;j--){
+            const maxAllowed=gs.chain[j+1].dist+GAP;
+            if(gs.chain[j].dist<maxAllowed){
+              gs.chain[j].dist=maxAllowed;
+              const pp=pathAt(gs.chain[j].dist);
+              gs.chain[j].x=pp.x; gs.chain[j].y=pp.y;
+            }
+          }
+        }
+      }
+      if(s.dist>PATH_LEN*1.1) gs.spawners.splice(i,1);
+    }
+
+    const spd=(SPEED + gs.level*0.0012)*dt;
+    for(const b of gs.chain){
+      if(!b.removing){
+        b.dist+=spd;
+        const p=pathAt(b.dist); b.x=p.x; b.y=p.y;
+      }
+      if(b.scale<1) b.scale=Math.min(1,b.scale+0.07);
+    }
+
+    for(let i=gs.projs.length-1;i>=0;i--){
+      const p=gs.projs[i];
+      p.trail.push({x:p.x,y:p.y,life:1});
+      if(p.trail.length>8) p.trail.shift();
+      p.trail.forEach(t=>t.life-=.16);
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+
+      if(gs.chain.length>0){
+        const f=gs.chain[0];
+        if(Math.hypot(p.x-f.x,p.y-f.y)<BR*2.6){
+          insertFront(p.color); gs.projs.splice(i,1); continue;
+        }
+      }
+      if(p.x<-100||p.x>canvas.width+100||p.y<-100||p.y>canvas.height+100)
+        gs.projs.splice(i,1);
+    }
+
+    for(let i=gs.particles.length-1;i>=0;i--){
+      const pt=gs.particles[i];
+      pt.x+=pt.vx; pt.y+=pt.vy; pt.vy+=.015; pt.life-=pt.decay;
+      if(pt.life<=0) gs.particles.splice(i,1);
+    }
+
+    updateHUD();
+  }
+
+  // Draw spawners first
+  for(const s of gs.spawners){
+    drawBall(s.x,s.y,s.color,BR*s.scale,s.scale);
+  }
+
+  // Draw chain balls (back to front)
+  for(let i=gs.chain.length-1;i>=0;i--){
+    const b=gs.chain[i];
+    let sc=b.scale;
+    if(b.removing){ b.scale*=.82; sc=b.scale; if(sc<.04) continue; }
+    drawBall(b.x,b.y,b.color,BR*sc,sc);
+  }
+
+  // Draw projectiles
+  for(const p of gs.projs){
+    for(let i=0;i<p.trail.length;i++){
+      const t=p.trail[i],a=t.life*.5,r=BR*(i/p.trail.length)*.6;
+      if(r<.3)continue;
+      ctx.beginPath(); ctx.arc(t.x,t.y,r,0,Math.PI*2);
+      ctx.fillStyle=COLORS[p.color]+Math.floor(a*255).toString(16).padStart(2,'0');
+      ctx.fill();
+    }
+    drawBall(p.x,p.y,p.color,BR,1);
+  }
+
+  for(const pt of gs.particles){
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r*pt.life,0,Math.PI*2);
+    ctx.fillStyle=pt.color+Math.floor(pt.life*200).toString(16).padStart(2,'0');
+    ctx.fill();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ── Events ─────────────────────────────────────────────
+document.querySelectorAll('.colorBtn').forEach(btn=>{
+  const fn=e=>{ 
+    e.preventDefault(); 
+    shoot(btn.dataset.color); 
+  };
+  btn.addEventListener('click',fn);
+  btn.addEventListener('touchstart',fn,{passive:false});
+});
+document.getElementById('restartBtn').addEventListener('click',resetGame);
+document.body.addEventListener('touchmove',e=>{
+  if(e.target.closest('#colorSelector'))e.preventDefault();
+},{passive:false});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+// ── Init ───────────────────────────────────────────────
+gs=makeGs();
+buildPath();
+initChain();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
